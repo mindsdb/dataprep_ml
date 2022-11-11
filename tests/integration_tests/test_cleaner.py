@@ -8,7 +8,7 @@ from data_insights.cleaners import cleaner
 from data_insights.imputers import NumericalImputer, CategoricalImputer
 
 
-class TestTypeInference(unittest.TestCase):
+class TestCleaner(unittest.TestCase):
     def test_0_airline_sentiment(self):
         df = pd.read_csv("tests/data/airline_sentiment_sample.csv")
         inferred_types = infer_types(df, pct_invalid=0)
