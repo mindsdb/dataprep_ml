@@ -16,4 +16,4 @@ class TestInsights(unittest.TestCase):
                                   dtypes=inferred_types.dtypes,
                                   args=args)
 
-        self.assertTrue(sa, isinstance(sa, StatisticalAnalysis))  # TODO: better asserts
+        self.assertTrue(isinstance(sa, StatisticalAnalysis))  # TODO: better asserts
