@@ -1,5 +1,5 @@
 # data_insights
-Automated data cleaning, analysis and splitting for Machine Learning pipelines.
+Data utilities for Machine Learning pipelines.
 
 
 ## Submodules
