@@ -1,5 +1,7 @@
-__version__ = '0.0.2'
+from dataprep_ml.base import StatisticalAnalysis, DataAnalysis
+
+__version__ = '0.0.3'
 __name__ = "dataprep_ml"
 
 
-__all__ = ['__version__', '__name__']
+__all__ = ['__version__', '__name__', 'StatisticalAnalysis', 'DataAnalysis']
