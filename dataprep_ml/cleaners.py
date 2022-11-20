@@ -10,8 +10,8 @@ import pandas as pd
 from type_infer.dtype import dtype
 from type_infer.helpers import is_nan_numeric, clean_float
 
-from data_insights.helpers import log
-from data_insights.imputers import BaseImputer
+from dataprep_ml.helpers import log
+from dataprep_ml.imputers import BaseImputer
 
 
 def cleaner(

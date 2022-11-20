@@ -3,8 +3,8 @@ import pandas as pd
 
 from type_infer.infer import infer_types
 
-from data_insights.base import StatisticalAnalysis
-from data_insights.insights import statistical_analysis
+from dataprep_ml.base import StatisticalAnalysis
+from dataprep_ml.insights import statistical_analysis
 
 
 class TestInsights(unittest.TestCase):

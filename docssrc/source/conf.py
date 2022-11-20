@@ -21,13 +21,13 @@ sys.path.append(os.path.abspath('../../type_infer'))
 # ----------------- #
 # Project information
 # ----------------- #
-project = 'data_insights'
+project = 'dataprep_ml'
 copyright = '2022, MindsDB'
 authors = "MindsDB"
 now = datetime.datetime.now()
 
 # Version of the package
-packageversion = __import__('data_insights').__version__
+packageversion = __import__('dataprep_ml').__version__
 
 version = packageversion
 release = packageversion
@@ -138,6 +138,6 @@ autoapi_template_dir = '_autoapi_templates'
 autoapi_root = 'docs'
 autoapi_generate_api_docs = False
 
-autoapi_dirs = ['../../data_insights']
+autoapi_dirs = ['../../dataprep_ml']
 
 # autodoc_member_order = 'bysource' # Keep order of the members accordingly

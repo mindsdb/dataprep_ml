@@ -10,7 +10,7 @@ Data Insights
 :Release: |release|
 :Date: |today|
 |
-Welcome to the ``data_insights`` documentation. ``data_insights`` is a Python package aimed at automatically inferring the data type for each column in a tabular dataset.
+Welcome to the ``dataprep_ml`` documentation. ``dataprep_ml`` is a Python package aimed at automatically inferring the data type for each column in a tabular dataset.
 
 Quick Guide
 =======================
@@ -21,7 +21,7 @@ Quick Guide
 Installation
 ============
 
-You can install ``data_insights`` as follows:
+You can install ``dataprep_ml`` as follows:
 
 .. code-block:: bash
 
@@ -32,7 +32,7 @@ We recommend doing the above inside a newly-created python virtual environment.
 Setting up a dev environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - Clone the repository
-- Run ``cd data_insights && pip install --editable .``
+- Run ``cd dataprep_ml && pip install --editable .``
 - Add it to your python path (e.g. by adding ``export PYTHONPATH='/where/you/cloned/repo':$PYTHONPATH`` as a newline at the end of your ``~/.bashrc`` file)
 - Check that the unit-tests are passing by going into the directory where you cloned and running: ``python -m unittest discover tests``
 
@@ -42,11 +42,11 @@ Setting up a dev environment
 Quick start
 =======================
 
-``data_insights`` works with ``pandas.DataFrames``.
+``dataprep_ml`` works with ``pandas.DataFrames``.
 
 .. code-block:: python
 
-   import data_insights
+   import dataprep_ml
 
 
 Contributions
@@ -75,14 +75,14 @@ In general, we follow the `fork-and-pull <https://docs.github.com/en/github/coll
 3. Make changes and commit them
 4. Make sure that the CI tests pass. You can run the test suite locally with ``flake8 .`` to check style and ``python -m unittest discover tests`` to run the automated tests. This doesn't guarantee it will pass remotely since we run on multiple envs, but should work in most cases.
 5. Push your local branch to your fork
-6. Submit a pull request from your repo to the ``staging`` branch of ``mindsdb/data_insights`` so that we can review your changes. Be sure to merge the latest from staging before making a pull request!
+6. Submit a pull request from your repo to the ``staging`` branch of ``mindsdb/dataprep_ml`` so that we can review your changes. Be sure to merge the latest from staging before making a pull request!
 
 .. note:: You will need to sign a CLI agreement for the code since the repository is under a GPL license.
 
 
 Feature and Bug reports
 ^^^^^^^^^^^^^^^^^^^^^^^^
-We use GitHub issues to track bugs and features. Report them by opening a `new issue <https://github.com/mindsdb/data_insights/issues/new/choose>`_ and fill out all of the required inputs.
+We use GitHub issues to track bugs and features. Report them by opening a `new issue <https://github.com/mindsdb/dataprep_ml/issues/new/choose>`_ and fill out all of the required inputs.
 
 
 Code review process
@@ -121,7 +121,7 @@ License
     <img src="https://img.shields.io/pypi/l/lightwood" alt="PyPI - License">
     </embed>
 
-| `License <https://github.com/mindsdb/data_insights/blob/stable/LICENSE>`_
+| `License <https://github.com/mindsdb/dataprep_ml/blob/stable/LICENSE>`_
 
 
 Other Links

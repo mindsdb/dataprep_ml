@@ -4,8 +4,8 @@ import pandas as pd
 
 from type_infer.infer import infer_types
 
-from data_insights.cleaners import cleaner
-from data_insights.imputers import NumericalImputer, CategoricalImputer
+from dataprep_ml.cleaners import cleaner
+from dataprep_ml.imputers import NumericalImputer, CategoricalImputer
 
 
 class TestCleaners(unittest.TestCase):

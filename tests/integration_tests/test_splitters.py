@@ -3,7 +3,7 @@ import pandas as pd
 
 from type_infer.infer import infer_types
 
-from data_insights.splitters import splitter
+from dataprep_ml.splitters import splitter
 
 
 class TestSplitters(unittest.TestCase):

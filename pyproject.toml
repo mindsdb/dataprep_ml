@@ -5,7 +5,7 @@ description = "Automated dataframe analysis for Machine Learning pipelines."
 authors = ["MindsDB Inc. <hello@mindsdb.com>"]
 license = "GPL-3.0"
 readme = "README.md"
-packages = [{include = "data_insights"}]
+packages = [{include = "dataprep_ml"}]
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
