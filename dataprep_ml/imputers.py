@@ -3,7 +3,7 @@ from typing import List
 
 import pandas as pd
 
-from data_insights.helpers import log
+from dataprep_ml.helpers import log
 
 
 class BaseImputer:

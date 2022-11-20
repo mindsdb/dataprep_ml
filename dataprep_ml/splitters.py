@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from type_infer.dtype import dtype
 
-from data_insights.helpers import log
+from dataprep_ml.helpers import log
 
 
 def splitter(

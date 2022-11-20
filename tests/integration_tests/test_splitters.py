@@ -3,7 +3,7 @@ import pandas as pd
 
 from type_infer.infer import infer_types
 
-from data_insights.splitters import splitter
+from dataprep_ml.splitters import splitter
 
 
 class TestSplitters(unittest.TestCase):
@@ -31,6 +31,6 @@ class TestSplitters(unittest.TestCase):
         self.assertTrue(isinstance(test, pd.DataFrame))
         self.assertTrue(isinstance(stratified_on, list))
 
-        self.assertTrue(len(train) == round(len(df)*train_pct))
-        self.assertTrue(len(dev) == round(len(df)*dev_pct))
-        self.assertTrue(len(test) == round(len(df)*test_pct))
+        self.assertTrue(len(train) == round(len(df) * train_pct))
+        self.assertTrue(len(dev) == round(len(df) * dev_pct))
+        self.assertTrue(len(test) == round(len(df) * test_pct))

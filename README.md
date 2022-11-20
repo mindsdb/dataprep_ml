@@ -1,4 +1,4 @@
-# data_insights
+# dataprep_ml
 Data utilities for Machine Learning pipelines.
 
 

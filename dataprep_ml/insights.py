@@ -9,14 +9,14 @@ from dateutil.parser import parse as parse_dt
 
 from type_infer.dtype import dtype
 
-from data_insights.cleaners import cleaner
-from data_insights.cleaners import _clean_float
-from data_insights.helpers import get_ts_groups
-from data_insights.helpers import filter_nan_and_none
+from dataprep_ml.cleaners import cleaner
+from dataprep_ml.cleaners import _clean_float
+from dataprep_ml.helpers import get_ts_groups
+from dataprep_ml.helpers import filter_nan_and_none
 
-from data_insights.helpers import log
-from data_insights.helpers import seed
-from data_insights.base import StatisticalAnalysis
+from dataprep_ml.helpers import log
+from dataprep_ml.helpers import seed
+from dataprep_ml.base import StatisticalAnalysis
 
 
 def statistical_analysis(data: pd.DataFrame,

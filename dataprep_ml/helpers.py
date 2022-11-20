@@ -17,8 +17,8 @@ def initialize_log():
     handler.setFormatter(colorlog.ColoredFormatter())
 
     logging.basicConfig(handlers=[handler])
-    log = logging.getLogger(f'data_insights-{pid}')
-    log_level = os.environ.get('DATA_INSIGHTS_LOG', 'DEBUG')
+    log = logging.getLogger(f'dataprep_ml-{pid}')
+    log_level = os.environ.get('DATAPREP_ML_LOG', 'DEBUG')
     log.setLevel(log_level)
     return log
 
