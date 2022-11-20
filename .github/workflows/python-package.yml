@@ -35,3 +35,28 @@ jobs:
       run: |
         # Run all the "standard" tests
         python -m unittest discover tests
+
+  deploy:
+    runs-on: ubuntu-latest
+    environment: PublishCI
+    needs: test
+    if: github.ref == 'refs/heads/stable'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+    - name: Build
+      run: poetry build
+    - name: Publish
+      env:
+        POETRY_HTTP_BASIC_PYPI_USERNAME: __token__
+        POETRY_HTTP_BASIC_PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        poetry publish --dry-run
+        poetry publish
