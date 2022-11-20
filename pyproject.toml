@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "data-insights"
-version = "0.0.1"
+name = "dataprep-ml"
+version = "0.0.2"
 description = "Automated dataframe analysis for Machine Learning pipelines."
 authors = ["MindsDB Inc. <hello@mindsdb.com>"]
 license = "GPL-3.0"
