@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 import dateinfer
 import datetime
 
@@ -8,6 +8,7 @@ from scipy.stats import entropy
 from dateutil.parser import parse as parse_dt
 
 from type_infer.dtype import dtype
+from type_infer.infer import infer_types
 
 from dataprep_ml.cleaners import cleaner
 from dataprep_ml.cleaners import _clean_float
@@ -16,7 +17,25 @@ from dataprep_ml.helpers import filter_nan_and_none
 
 from dataprep_ml.helpers import log
 from dataprep_ml.helpers import seed
-from dataprep_ml.base import StatisticalAnalysis
+from dataprep_ml.base import StatisticalAnalysis, DataAnalysis
+
+
+def analyze_dataset(df: pd.DataFrame, target: str, args: Optional[dict] = None) -> DataAnalysis:
+    """
+    Use this to understand and visualize the data.
+
+    :param df: Raw data in dataframe format.
+    :param args: additional arguments to pass into either the type inference or statistical analysis phases.
+    :returns: An object containing insights about the data (specifically the type information and statistical analysis).
+    """  # noqa
+    if args is None:
+        args = {'target': target}
+    else:
+        args['target'] = target
+
+    type_information = infer_types(df, args.get('pct_invalid', 2))
+    stats = statistical_analysis(df, type_information.dtypes, args, type_information.identifiers)
+    return DataAnalysis(type_information=type_information, statistical_analysis=stats)
 
 
 def statistical_analysis(data: pd.DataFrame,
