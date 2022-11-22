@@ -23,7 +23,7 @@ def statistical_analysis(data: pd.DataFrame,
                          dtypes: Dict[str, str],
                          args,  # TODO: refactor this so that input is not ProblemDefinition but normal Dict
                          identifiers: Dict[str, object] = {},
-                         exceptions: list = ['__mdb_original_index'],   # TODO: add this as a default in lw
+                         exceptions: list = ['__mdb_original_index'],   # TODO: add this as default in lw, rename  __lw_
                          seed_nr: int = 420) -> StatisticalAnalysis:
     seed(seed_nr)
     log.info('Starting statistical analysis')
@@ -38,8 +38,8 @@ def statistical_analysis(data: pd.DataFrame,
 
     nr_columns = len(data.columns)
     df = cleaner(data, dtypes, args.get('pct_invalid', 0),
-                 identifiers, args['target'], 'train', tss,
-                 args.get('anomaly_detection', False))
+                 args['target'], tss, args.get('anomaly_detection', False),
+                 mode='train', identifiers=identifiers)
     columns = [col for col in df.columns if col not in exceptions]
 
     missing = {}

@@ -1,4 +1,4 @@
-name: Data Insights Tests Workflow
+name: dataprep_ml Tests Workflow
 
 on:
   push:

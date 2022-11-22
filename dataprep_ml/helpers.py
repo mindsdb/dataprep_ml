@@ -40,8 +40,8 @@ def get_ts_groups(df: pd.DataFrame, tss) -> list:
     # TODO - Should refactor this
     ##############################
     group_combinations = ['__default']
-    if tss.group_by:
+    if tss.get('group_by', False):
         groups = [tuple([g]) if not isinstance(g, tuple) else g
-                  for g in list(df.groupby(by=tss.group_by).groups.keys())]
+                  for g in list(df.groupby(by=tss['group_by']).groups.keys())]
         group_combinations.extend(groups)
     return group_combinations

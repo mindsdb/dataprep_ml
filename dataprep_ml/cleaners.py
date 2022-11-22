@@ -18,12 +18,12 @@ def cleaner(
     data: pd.DataFrame,
     dtype_dict: Dict[str, str],
     pct_invalid: float,
-    identifiers: Dict[str, str],  # TODO: turn into optional. pass inside a normal dict.
-    target: str,  # TODO: turn into optional. pass inside a normal dict.
-    mode: str,  # TODO: turn into optional. pass inside a normal dict.
+    target: str,  # TODO: turn into optional (requires logic changes). pass inside a normal dict.
     timeseries_settings: Dict,  # TODO: move TS logic into separate cleaner and call sequentially from lw
-    anomaly_detection: bool,  # TODO: pass inside a normal dict.
-    imputers: Dict[str, BaseImputer] = {},
+    anomaly_detection: bool,  # TODO: pass inside a dict?
+    mode: Optional[str] = 'train',  # TODO: pass inside a dict? add unit tests for missing param
+    identifiers: Optional[Dict[str, str]] = None, # TODO: add unit test for no identifiers provided
+    imputers: Dict[str, BaseImputer] = {},  # TODO: pass inside a normal dict
     custom_cleaning_functions: Dict[str, str] = {}
 ) -> pd.DataFrame:
     """
