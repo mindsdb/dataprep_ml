@@ -22,7 +22,7 @@ def cleaner(
     timeseries_settings: Dict,  # TODO: move TS logic into separate cleaner and call sequentially from lw
     anomaly_detection: bool,  # TODO: pass inside a dict?
     mode: Optional[str] = 'train',  # TODO: pass inside a dict? add unit tests for missing param
-    identifiers: Optional[Dict[str, str]] = None, # TODO: add unit test for no identifiers provided
+    identifiers: Optional[Dict[str, str]] = None,  # TODO: add unit test for no identifiers provided
     imputers: Dict[str, BaseImputer] = {},  # TODO: pass inside a normal dict
     custom_cleaning_functions: Dict[str, str] = {}
 ) -> pd.DataFrame:
