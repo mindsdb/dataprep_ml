@@ -20,7 +20,7 @@ from dataprep_ml.helpers import seed
 from dataprep_ml.base import StatisticalAnalysis, DataAnalysis
 
 
-def analyze_dataset(df: pd.DataFrame, target: str, args: Optional[dict] = None) -> DataAnalysis:
+def analyze_dataset(df: pd.DataFrame, target: Optional[str] = None, args: Optional[dict] = None) -> DataAnalysis:
     """
     Use this to understand and visualize the data.
 
@@ -28,6 +28,8 @@ def analyze_dataset(df: pd.DataFrame, target: str, args: Optional[dict] = None) 
     :param args: additional arguments to pass into either the type inference or statistical analysis phases.
     :returns: An object containing insights about the data (specifically the type information and statistical analysis).
     """  # noqa
+    if target is None:
+        target = df.columns[0]
     if args is None:
         args = {'target': target}
     else:
