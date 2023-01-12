@@ -174,7 +174,7 @@ def _tags_to_tuples(tags_str: str) -> Tuple[str]:
     >> ('apples', 'oranges', 'bananas')
     """
     try:
-        return tuple([x.strip() for x in tags_str.split(",")])
+        return tuple([x.strip().strip('"').strip("'") for x in tags_str.split(",")])
     except Exception:
         return tuple()
 
