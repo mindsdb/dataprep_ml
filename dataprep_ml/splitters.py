@@ -128,9 +128,9 @@ def stratify(data: pd.DataFrame,
         dev_cutoff = round(df.shape[0] * pct_dev) + train_cutoff
         test_cutoff = round(df.shape[0] * pct_test) + dev_cutoff
 
-        train_st = train_st.append(df[:train_cutoff])
-        dev_st = dev_st.append(df[train_cutoff:dev_cutoff])
-        test_st = test_st.append(df[dev_cutoff:test_cutoff])
+        train_st = pd.concat([train_st, df[:train_cutoff]])
+        dev_st = pd.concat([dev_st, df[train_cutoff:dev_cutoff]])
+        test_st = pd.concat([test_st, df[dev_cutoff:test_cutoff]])
 
     if reshuffle:
         train_st, dev_st, test_st = [df.sample(frac=1, random_state=seed).reset_index(drop=True)
