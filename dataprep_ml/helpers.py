@@ -31,8 +31,8 @@ def seed(seed_nr: int) -> None:
     random.seed(seed_nr)
 
 
-def filter_nan_and_none(series: Iterable) -> list:
-    return [x for x in series if not is_nan_numeric(x) and x is not None]
+def filter_nan_and_none(series: pd.Series) -> pd.Series:
+    return series.apply(lambda x: x if (not is_nan_numeric(x) and x is not None) else np.nan).dropna()
 
 
 def get_ts_groups(df: pd.DataFrame, tss) -> list:

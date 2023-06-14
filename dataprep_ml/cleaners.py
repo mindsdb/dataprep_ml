@@ -41,17 +41,19 @@ def cleaner(
 
     :returns: The cleaned data
     """ # noqa
-
     data = _remove_columns(data, identifiers, target, mode, timeseries_settings,
                            anomaly_detection, dtype_dict)
 
     data['__mdb_original_index'] = np.arange(len(data))
 
     for col in _get_columns_to_clean(data, dtype_dict, mode, target):
-
         # Get and apply a cleaning function for each data type
         # If you want to customize the cleaner, it's likely you can to modify ``get_cleaning_func``
-        data[col] = data[col].apply(get_cleaning_func(dtype_dict[col], custom_cleaning_functions))
+        fn, vec = get_cleaning_func(dtype_dict[col], custom_cleaning_functions)
+        if not vec:
+            data[col] = data[col].apply(fn)
+        if vec:
+            data[col] = fn(data[col])
 
     if timeseries_settings.get('is_timeseries', False):
         data = clean_timeseries(data, timeseries_settings)
@@ -87,19 +89,24 @@ def _check_if_invalid(new_data: pd.Series, pct_invalid: float, col_name: str):
         raise Exception(err)
 
 
-def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, str]) -> Callable:
+def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, str]) -> Tuple[Callable, bool]:
     """
     For the provided data type, provide the appropriate cleaning function. Below are the defaults, users can either override this function OR impose a custom block.
 
     :param data_dtype: The data-type (inferred from a column) as prescribed from ``api.dtype``
 
-    :returns: The appropriate function that will pre-process (clean) data of specified dtype.
+    :returns: A 2-tuple.
+        0: The appropriate function that will pre-process (clean) data of specified dtype.
+        1: Whether the function is "vectorized": applied per item (False), or over entire column at once (True).
     """ # noqa
+    vec = False
+
     if data_dtype in custom_cleaning_functions:
         clean_func = eval(custom_cleaning_functions[data_dtype])
 
     elif data_dtype in (dtype.date, dtype.datetime):
-        clean_func = _standardize_datetime
+        clean_func = _standardize_datetime2
+        vec = True
 
     elif data_dtype in (dtype.float, dtype.num_tsarray):
         clean_func = _clean_float
@@ -134,13 +141,15 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
     else:
         raise ValueError(f"{data_dtype} is not supported. Check lightwood.api.dtype")
 
-    return clean_func
+    return clean_func, vec
 
 
 # ------------------------- #
 # Temporal Cleaning
 # ------------------------- #
 
+def _standardize_datetime2(element: pd.Series) -> pd.Series:
+    return pd.to_datetime(element).apply(lambda x: x.timestamp())
 
 def _standardize_datetime(element: object) -> Optional[float]:
     """
@@ -237,6 +246,13 @@ def _standardize_cat_array(element: List) -> Optional[List[str]]:
 # ------------------------- #
 # Integers/Floats/Quantities
 # ------------------------- #
+
+def _clean_float2(element: pd.Series) -> pd.Series:
+    def _clean(x: object):
+        cleaned_float = clean_float(x)
+        return cleaned_float if not is_nan_numeric(cleaned_float) else None
+
+    return element.apply(_clean)
 
 def _clean_float(element: object) -> Optional[float]:
     """
@@ -391,12 +407,6 @@ def clean_timeseries(df: pd.DataFrame, tss: Dict) -> pd.DataFrame:
     :param tss: timeseries settings
     :return: cleaned data.
     """
-    invalid_rows = []
-
-    for idx, row in df.iterrows():
-        if pd.isna(row[tss['order_by']]):
-            invalid_rows.append(idx)
-
+    invalid_rows = df[df[tss['order_by']].isna()].index
     df = df.drop(invalid_rows)
-
     return df
