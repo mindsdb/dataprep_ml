@@ -1,8 +1,6 @@
 import os
 import random
 import logging
-from typing import Iterable
-
 import colorlog
 import numpy as np
 import pandas as pd

@@ -151,6 +151,7 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 def _standardize_datetime2(element: pd.Series) -> pd.Series:
     return pd.to_datetime(element).apply(lambda x: x.timestamp())
 
+
 def _standardize_datetime(element: object) -> Optional[float]:
     """
     Parses an expected date-time element. Intakes an element that can in theory be anything.
@@ -253,6 +254,7 @@ def _clean_float2(element: pd.Series) -> pd.Series:
         return cleaned_float if not is_nan_numeric(cleaned_float) else None
 
     return element.apply(_clean)
+
 
 def _clean_float(element: object) -> Optional[float]:
     """
