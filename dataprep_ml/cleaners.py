@@ -104,7 +104,6 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 
     elif data_dtype in (dtype.date, dtype.datetime):
         clean_func = _standardize_datetime
-        vec = True
 
     elif data_dtype in (dtype.float, dtype.num_tsarray):
         clean_func = _clean_float
@@ -138,6 +137,9 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 
     else:
         raise ValueError(f"{data_dtype} is not supported. Check lightwood.api.dtype")
+
+    # vectorized function lookup
+    vec = clean_func in (_clean_int, _clean_float, _standardize_datetime)
 
     return clean_func, vec
 
@@ -237,14 +239,14 @@ def _clean_float(element: pd.Series) -> pd.Series:
     return element.apply(_clean)
 
 
-def _clean_int(element: object) -> Optional[int]:
+def _clean_int(element: pd.Series) -> pd.Series:
     """
-    Given an element, converts it into integer numeric format. If element is NaN, or inf, then returns None.
+    Given a series, converts it into integer numeric format. If element is NaN, or inf, then returns None.
     """
-    element = _clean_float(element)
-    if element is not None:
-        element = int(element)
-    return element
+    ints = pd.to_numeric(_clean_float(element), errors='coerce')
+    ints = ints.replace([np.inf, -np.inf], np.nan)
+    ints = ints.fillna(np.nan).replace([np.nan], [None])  # TODO: probably best to leave as nans here
+    return ints
 
 
 def _clean_quantity(element: object) -> Optional[float]:
