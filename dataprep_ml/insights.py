@@ -182,12 +182,11 @@ def statistical_analysis(data: pd.DataFrame,
 def get_datetime_histogram(data: pd.Series, bins: int) -> Dict[str, list]:
     """Generates the histogram for date and datetime types
     """
-    print(type(data))
     if isinstance(data.iloc[0], float) or isinstance(data.iloc[0], int):
         # data = [_clean_float(x) for x in data]
         data = _clean_float2(data)
     elif isinstance(data.iloc[0], pd.Timestamp):
-        print("this should probably be deleted!")
+        # TODO: this should probably be deleted
         data = data.apply(lambda x: x.timestamp())
     else:
         # TODO: slow, optimize

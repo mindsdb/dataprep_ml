@@ -149,7 +149,7 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 # ------------------------- #
 
 def _standardize_datetime2(element: pd.Series) -> pd.Series:
-    return pd.to_datetime(element).apply(lambda x: x.timestamp())
+    return pd.to_datetime(element, infer_datetime_format=True).apply(lambda x: x.timestamp())
 
 
 def _standardize_datetime(element: object) -> Optional[float]:
