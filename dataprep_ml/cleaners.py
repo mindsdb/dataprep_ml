@@ -1,7 +1,5 @@
 import re
-import datetime
 from copy import deepcopy
-from dateutil.parser import parse as parse_dt
 from typing import Dict, List, Optional, Tuple, Callable, Union
 
 import numpy as np
@@ -105,7 +103,7 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
         clean_func = eval(custom_cleaning_functions[data_dtype])
 
     elif data_dtype in (dtype.date, dtype.datetime):
-        clean_func = _standardize_datetime2
+        clean_func = _standardize_datetime
         vec = True
 
     elif data_dtype in (dtype.float, dtype.num_tsarray):
@@ -148,25 +146,8 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 # Temporal Cleaning
 # ------------------------- #
 
-def _standardize_datetime2(element: pd.Series) -> pd.Series:
+def _standardize_datetime(element: pd.Series) -> pd.Series:
     return pd.to_datetime(element, infer_datetime_format=True).apply(lambda x: x.timestamp())
-
-
-def _standardize_datetime(element: object) -> Optional[float]:
-    """
-    Parses an expected date-time element. Intakes an element that can in theory be anything.
-    """
-    if element is None or pd.isna(element):
-        return 0.0  # correct? TODO: Remove if the TS encoder can handle `None`
-    try:
-        date = parse_dt(str(element))
-    except Exception:
-        try:
-            date = datetime.datetime.utcfromtimestamp(element)
-        except Exception:
-            return 0.0
-
-    return date.timestamp()
 
 
 # ------------------------- #
@@ -248,25 +229,12 @@ def _standardize_cat_array(element: List) -> Optional[List[str]]:
 # Integers/Floats/Quantities
 # ------------------------- #
 
-def _clean_float2(element: pd.Series) -> pd.Series:
+def _clean_float(element: pd.Series) -> pd.Series:
     def _clean(x: object):
         cleaned_float = clean_float(x)
         return cleaned_float if not is_nan_numeric(cleaned_float) else None
 
     return element.apply(_clean)
-
-
-def _clean_float(element: object) -> Optional[float]:
-    """
-    Given an element, converts it into float numeric format. If element is NaN, or inf, then returns None.
-    """
-    try:
-        cleaned_float = clean_float(element)
-        if is_nan_numeric(cleaned_float):
-            return None
-        return cleaned_float
-    except Exception:
-        return None
 
 
 def _clean_int(element: object) -> Optional[int]:
