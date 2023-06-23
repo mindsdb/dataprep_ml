@@ -1,7 +1,5 @@
 import re
-import datetime
 from copy import deepcopy
-from dateutil.parser import parse as parse_dt
 from typing import Dict, List, Optional, Tuple, Callable, Union
 
 import numpy as np
@@ -41,17 +39,19 @@ def cleaner(
 
     :returns: The cleaned data
     """ # noqa
-
     data = _remove_columns(data, identifiers, target, mode, timeseries_settings,
                            anomaly_detection, dtype_dict)
 
     data['__mdb_original_index'] = np.arange(len(data))
 
     for col in _get_columns_to_clean(data, dtype_dict, mode, target):
-
         # Get and apply a cleaning function for each data type
         # If you want to customize the cleaner, it's likely you can to modify ``get_cleaning_func``
-        data[col] = data[col].apply(get_cleaning_func(dtype_dict[col], custom_cleaning_functions))
+        fn, vec = get_cleaning_func(dtype_dict[col], custom_cleaning_functions)
+        if not vec:
+            data[col] = data[col].apply(fn)
+        if vec:
+            data[col] = fn(data[col])
 
     if timeseries_settings.get('is_timeseries', False):
         data = clean_timeseries(data, timeseries_settings)
@@ -87,14 +87,18 @@ def _check_if_invalid(new_data: pd.Series, pct_invalid: float, col_name: str):
         raise Exception(err)
 
 
-def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, str]) -> Callable:
+def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, str]) -> Tuple[Callable, bool]:
     """
     For the provided data type, provide the appropriate cleaning function. Below are the defaults, users can either override this function OR impose a custom block.
 
     :param data_dtype: The data-type (inferred from a column) as prescribed from ``api.dtype``
 
-    :returns: The appropriate function that will pre-process (clean) data of specified dtype.
+    :returns: A 2-tuple.
+        0: The appropriate function that will pre-process (clean) data of specified dtype.
+        1: Whether the function is "vectorized": applied per item (False), or over entire column at once (True).
     """ # noqa
+    vec = False
+
     if data_dtype in custom_cleaning_functions:
         clean_func = eval(custom_cleaning_functions[data_dtype])
 
@@ -134,29 +138,18 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
     else:
         raise ValueError(f"{data_dtype} is not supported. Check lightwood.api.dtype")
 
-    return clean_func
+    # vectorized function lookup
+    vec = clean_func in (_clean_int, _clean_float, _standardize_datetime)
+
+    return clean_func, vec
 
 
 # ------------------------- #
 # Temporal Cleaning
 # ------------------------- #
 
-
-def _standardize_datetime(element: object) -> Optional[float]:
-    """
-    Parses an expected date-time element. Intakes an element that can in theory be anything.
-    """
-    if element is None or pd.isna(element):
-        return 0.0  # correct? TODO: Remove if the TS encoder can handle `None`
-    try:
-        date = parse_dt(str(element))
-    except Exception:
-        try:
-            date = datetime.datetime.utcfromtimestamp(element)
-        except Exception:
-            return 0.0
-
-    return date.timestamp()
+def _standardize_datetime(element: pd.Series) -> pd.Series:
+    return pd.to_datetime(element, infer_datetime_format=True).apply(lambda x: x.timestamp())
 
 
 # ------------------------- #
@@ -238,27 +231,22 @@ def _standardize_cat_array(element: List) -> Optional[List[str]]:
 # Integers/Floats/Quantities
 # ------------------------- #
 
-def _clean_float(element: object) -> Optional[float]:
-    """
-    Given an element, converts it into float numeric format. If element is NaN, or inf, then returns None.
-    """
-    try:
-        cleaned_float = clean_float(element)
-        if is_nan_numeric(cleaned_float):
-            return None
-        return cleaned_float
-    except Exception:
-        return None
+def _clean_float(element: pd.Series) -> pd.Series:
+    def _clean(x: object):
+        cleaned_float = clean_float(x)
+        return cleaned_float if not is_nan_numeric(cleaned_float) else None
+
+    return element.apply(_clean)
 
 
-def _clean_int(element: object) -> Optional[int]:
+def _clean_int(element: pd.Series) -> pd.Series:
     """
-    Given an element, converts it into integer numeric format. If element is NaN, or inf, then returns None.
+    Given a series, converts it into integer numeric format. If element is NaN, or inf, then returns None.
     """
-    element = _clean_float(element)
-    if element is not None:
-        element = int(element)
-    return element
+    ints = pd.to_numeric(_clean_float(element), errors='coerce')
+    ints = ints.replace([np.inf, -np.inf], np.nan)
+    ints = ints.fillna(np.nan).replace([np.nan], [None])  # TODO: probably best to leave as nans here
+    return ints
 
 
 def _clean_quantity(element: object) -> Optional[float]:
@@ -391,12 +379,6 @@ def clean_timeseries(df: pd.DataFrame, tss: Dict) -> pd.DataFrame:
     :param tss: timeseries settings
     :return: cleaned data.
     """
-    invalid_rows = []
-
-    for idx, row in df.iterrows():
-        if pd.isna(row[tss['order_by']]):
-            invalid_rows.append(idx)
-
+    invalid_rows = df[df[tss['order_by']].isna()].index
     df = df.drop(invalid_rows)
-
     return df
