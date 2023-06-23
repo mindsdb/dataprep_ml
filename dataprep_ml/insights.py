@@ -182,9 +182,13 @@ def statistical_analysis(data: pd.DataFrame,
 def get_datetime_histogram(data: pd.Series, bins: int) -> Dict[str, list]:
     """Generates the histogram for date and datetime types
     """
-    if isinstance(data[0], float) or isinstance(data[0], int):
-        data = [_clean_float(x) for x in data]
+    if isinstance(data.iloc[0], float) or isinstance(data.iloc[0], int):
+        data = _clean_float(data)
+    elif isinstance(data.iloc[0], pd.Timestamp):
+        # TODO: this should probably be deleted
+        data = data.apply(lambda x: x.timestamp())
     else:
+        # TODO: slow, optimize
         data = [_clean_float(parse_dt(str(x)).timestamp()) for x in data]
 
     Y, X = np.histogram(data, bins=min(bins, len(set(data))),
@@ -204,13 +208,10 @@ def get_numeric_histogram(data: pd.Series, data_dtype: dtype, bins: int) -> Dict
     """Generate the histogram for integer and float typed data
     """
     # Handle arrays that are actual arrays and not things that become arrays later
-    if isinstance(data[0], list):
-        new_data = []
-        for arr in data:
-            new_data.extend(arr)
-        data = new_data
+    if isinstance(data.iloc[0], list):
+        data = data.applymap(lambda x: x[0]).values.reshape(-1, 1)
 
-    data = [_clean_float(x) for x in data]
+    data = _clean_float(data)
 
     Y, X = np.histogram(data, bins=min(bins, len(set(data))),
                         range=(min(data), max(data)), density=False)
