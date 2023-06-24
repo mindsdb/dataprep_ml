@@ -34,3 +34,5 @@ class TestSplitters(unittest.TestCase):
         self.assertTrue(len(train) == round(len(df) * train_pct))
         self.assertTrue(len(dev) == round(len(df) * dev_pct))
         self.assertTrue(len(test) == round(len(df) * test_pct))
+
+    # TODO add time series splitter test

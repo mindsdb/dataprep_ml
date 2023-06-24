@@ -114,23 +114,21 @@ def stratify(data: pd.DataFrame,
     :returns Stratified train, dev, test dataframes
     """  # noqa
 
-    train_st = pd.DataFrame(columns=data.columns)
-    dev_st = pd.DataFrame(columns=data.columns)
-    test_st = pd.DataFrame(columns=data.columns)
+    train_sts = []
+    dev_sts = []
+    test_sts = []
 
-    all_group_combinations = list(product(*[data[col].unique() for col in stratify_on]))
-    for group in all_group_combinations:
-        df = data
-        for idx, col in enumerate(stratify_on):
-            df = df[df[col] == group[idx]]
+    fractions = np.array([pct_train, pct_dev, pct_test])
+    groups = data.groupby(by=stratify_on)
+    for _, df in groups:
+        train_st, dev_st, test_st = np.array_split(df, (fractions[:-1].cumsum() * len(df)).astype(int))
+        train_sts.append(train_st)
+        dev_sts.append(dev_st)
+        test_sts.append(test_st)
 
-        train_cutoff = round(df.shape[0] * pct_train)
-        dev_cutoff = round(df.shape[0] * pct_dev) + train_cutoff
-        test_cutoff = round(df.shape[0] * pct_test) + dev_cutoff
-
-        train_st = pd.concat([train_st, df[:train_cutoff]])
-        dev_st = pd.concat([dev_st, df[train_cutoff:dev_cutoff]])
-        test_st = pd.concat([test_st, df[dev_cutoff:test_cutoff]])
+    train_st = pd.concat(train_sts)
+    dev_st = pd.concat(dev_sts)
+    test_st = pd.concat(test_sts)
 
     if reshuffle:
         train_st, dev_st, test_st = [df.sample(frac=1, random_state=seed).reset_index(drop=True)
