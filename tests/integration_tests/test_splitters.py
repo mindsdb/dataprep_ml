@@ -31,6 +31,10 @@ class TestSplitters(unittest.TestCase):
         self.assertTrue(isinstance(test, pd.DataFrame))
         self.assertTrue(isinstance(stratified_on, list))
 
-        self.assertTrue(len(train) == round(len(df) * train_pct))
-        self.assertTrue(len(dev) == round(len(df) * dev_pct))
-        self.assertTrue(len(test) == round(len(df) * test_pct))
+        train_len = round(len(df) * train_pct)
+        dev_len = round(0.1 + (len(df) * dev_pct))  # 0.1 to bypass bankers round behavior
+        self.assertTrue(len(train) == train_len)
+        self.assertTrue(len(dev) == dev_len)
+        self.assertTrue(len(test) == len(df) - (train_len + dev_len))
+
+    # TODO add time series splitter test
