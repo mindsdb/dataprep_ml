@@ -139,7 +139,7 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
         raise ValueError(f"{data_dtype} is not supported. Check lightwood.api.dtype")
 
     # vectorized function lookup
-    vec = clean_func in (_clean_int, _clean_float, _standardize_datetime)
+    vec = clean_func in (_clean_int, _clean_float, _standardize_datetime, _clean_quantity)
 
     return clean_func, vec
 
@@ -249,13 +249,15 @@ def _clean_int(element: pd.Series) -> pd.Series:
     return ints
 
 
-def _clean_quantity(element: object) -> Optional[float]:
+def _clean_quantity(element: pd.Series) -> pd.Series:
     """
     Given a quantity, clean and convert it into float numeric format. If element is NaN, or inf, then returns None.
     """
-    no_symbols = re.sub("[^0-9.,]", "", str(element)).replace(",", ".")
-    no_symbols = '0' if no_symbols == '' else no_symbols
-    element = float(no_symbols)
+    def _no_symbols(elt):
+        no_symbols = re.sub("[^0-9.,]", "", str(elt)).replace(",", ".")
+        no_symbols = '0' if no_symbols == '' else no_symbols
+        return float(no_symbols)
+    element = element.apply(_no_symbols)
     return _clean_float(element)
 
 
