@@ -120,7 +120,7 @@ def stratify(data: pd.DataFrame,
     fractions = np.array([pct_train, pct_dev, pct_test])
     groups = data.groupby(by=stratify_on)
     for _, df in groups:
-        train_st, dev_st, test_st = np.array_split(df, (fractions[:-1].cumsum() * len(df)).astype(int))
+        train_st, dev_st, test_st = np.array_split(df, (fractions[:-1].cumsum() * len(df)).round().astype(int))
         train_sts.append(train_st)
         dev_sts.append(dev_st)
         test_sts.append(test_st)
