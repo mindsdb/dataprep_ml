@@ -244,8 +244,7 @@ def _clean_int(element: pd.Series) -> pd.Series:
     Given a series, converts it into integer numeric format. If element is NaN, or inf, then returns None.
     """
     ints = pd.to_numeric(_clean_float(element), errors='coerce')
-    ints = ints.replace([np.inf, -np.inf], np.nan)
-    ints = ints.fillna(np.nan).replace([np.nan], [None])  # TODO: probably best to leave as nans here
+    ints = ints.replace([np.inf, -np.inf], np.nan).fillna(np.nan)
     return ints
 
 
