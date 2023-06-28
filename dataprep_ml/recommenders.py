@@ -4,6 +4,8 @@ import pandas as pd
 import scipy as sp
 from pydantic import BaseModel
 
+import numpy as np
+
 
 class RecommenderType(Enum):
     cf = 1
