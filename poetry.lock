@@ -89,14 +89,14 @@ testing = ["flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs
 
 [[package]]
 name = "joblib"
-version = "1.2.0"
+version = "1.3.0"
 description = "Lightweight pipelining with Python functions"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "joblib-1.2.0-py3-none-any.whl", hash = "sha256:091138ed78f800342968c523bdde947e7a305b8594b910a0fea2ab83c3c6d385"},
-    {file = "joblib-1.2.0.tar.gz", hash = "sha256:e1cee4a79e4af22881164f218d4311f60074197fb707e082e803b61f6d137018"},
+    {file = "joblib-1.3.0-py3-none-any.whl", hash = "sha256:172d56d4c43dd6bcd953bea213018c4084cf754963bbf54b8dae40faea716b98"},
+    {file = "joblib-1.3.0.tar.gz", hash = "sha256:0b12a65dc76c530dbd790dd92881f75c40932b4254a7c8e608a868df408ca0a3"},
 ]
 
 [[package]]
@@ -590,14 +590,14 @@ telegram = ["requests"]
 
 [[package]]
 name = "type-infer"
-version = "0.0.10"
+version = "0.0.13"
 description = "Automated type inference for Machine Learning pipelines."
 category = "main"
 optional = false
 python-versions = ">=3.7,<3.10"
 files = [
-    {file = "type_infer-0.0.10-py3-none-any.whl", hash = "sha256:c0c1819bff6cc9fb52eb2a0b325aeee1223ad2c5a19617a9c53ed0ce6df6970a"},
-    {file = "type_infer-0.0.10.tar.gz", hash = "sha256:26c6394659db3519efca628c45b7ca2ea2c1c8ec472b6c41300d46a5fc9825d0"},
+    {file = "type_infer-0.0.13-py3-none-any.whl", hash = "sha256:1612f31b0d70bc5d73a1aa0201a0f173c25a4eb4169839cba8c4e4fa0d765b21"},
+    {file = "type_infer-0.0.13.tar.gz", hash = "sha256:d384e5641375212c0ca2f800d139794932769e938c9ceacd48676946f02c4d06"},
 ]
 
 [package.dependencies]
