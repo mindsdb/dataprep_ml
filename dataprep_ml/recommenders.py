@@ -100,10 +100,10 @@ class RecommenderPreprocessor:
 
         self.interaction_data["user_idx"] = self.interaction_data[
             self.user_id_column_name
-        ].map(unique_user_ids)
+        ].map(unique_user_ids).astype('Int64')
         self.interaction_data["item_idx"] = self.interaction_data[
             self.item_id_column_name
-        ].map(unique_item_ids)
+        ].map(unique_item_ids).astype('Int64')
 
     def encode_interactions(self):
         """
@@ -129,6 +129,8 @@ class RecommenderPreprocessor:
         for index, series in self.interaction_data[
             ["user_idx", "item_idx", "interaction"]
         ].iterrows():
+            if series.isnull().any():
+                continue  # skip row if any NaN values
             lil_matrix[series["user_idx"], series["item_idx"]] = series["interaction"]
 
         # convert from lil_matrix to coo_matrix
