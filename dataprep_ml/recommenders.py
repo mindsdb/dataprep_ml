@@ -57,15 +57,12 @@ class RecommenderPreprocessor:
         :return void:
         """
 
-        idx_item_map = (
+        return (
             self.interaction_data[[self.item_id_column_name, "item_idx"]]
             .drop_duplicates()
             .set_index("item_idx")
             .to_dict()[self.item_id_column_name]
         )
-
-
-        return {int(k): v for k, v in idx_item_map.items()}
 
     @property
     def _idx_user_map(self) -> dict:
@@ -74,14 +71,12 @@ class RecommenderPreprocessor:
         :return void:
         """
 
-        idx_user_map = (
+        return (
             self.interaction_data[[self.user_id_column_name, "user_idx"]]
             .drop_duplicates()
             .set_index("user_idx")
             .to_dict()[self.user_id_column_name]
         )
-
-        return {int(k): v for k, v in idx_user_map.items()}
 
     def map_id_to_idx(self):
         """
@@ -93,22 +88,25 @@ class RecommenderPreprocessor:
         unique_user_ids = {
             v: k
             for k, v in enumerate(
-                self.interaction_data[self.user_id_column_name].unique(), 0
+                self.interaction_data[self.user_id_column_name].unique()
             )
         }
         unique_item_ids = {
             v: k
             for k, v in enumerate(
-                self.interaction_data[self.item_id_column_name].unique(), 0
+                self.interaction_data[self.item_id_column_name].unique()
             )
         }
 
         self.interaction_data["user_idx"] = self.interaction_data[
             self.user_id_column_name
-        ].map(unique_user_ids).astype('Int64')
+        ].map(unique_user_ids)
         self.interaction_data["item_idx"] = self.interaction_data[
             self.item_id_column_name
-        ].map(unique_item_ids).astype('Int64')
+        ].map(unique_item_ids)
+
+        # drop erroneous data
+        self.interaction_data.dropna(subset=["user_idx", "item_idx"], inplace=True, how='any')
 
     def encode_interactions(self):
         """
