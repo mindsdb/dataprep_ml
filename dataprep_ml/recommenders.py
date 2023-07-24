@@ -57,12 +57,15 @@ class RecommenderPreprocessor:
         :return void:
         """
 
-        return (
+        idx_item_map = (
             self.interaction_data[[self.item_id_column_name, "item_idx"]]
             .drop_duplicates()
             .set_index("item_idx")
             .to_dict()[self.item_id_column_name]
         )
+
+
+        return {int(k): v for k, v in idx_item_map.items()}
 
     @property
     def _idx_user_map(self) -> dict:
@@ -71,12 +74,14 @@ class RecommenderPreprocessor:
         :return void:
         """
 
-        return (
+        idx_user_map = (
             self.interaction_data[[self.user_id_column_name, "user_idx"]]
             .drop_duplicates()
             .set_index("user_idx")
             .to_dict()[self.user_id_column_name]
         )
+
+        return {int(k): v for k, v in idx_user_map.items()}
 
     def map_id_to_idx(self):
         """
