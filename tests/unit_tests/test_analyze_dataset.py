@@ -58,9 +58,9 @@ class TestInferTypes(unittest.TestCase):
         n_category_values = 4
         categories_cycle = cycle(range(n_category_values))
         n_multilabel_category_values = 25
-        multiple_categories_str_cycle = cycle(
-            random.choices(VOCAB[0:20], k=n_multilabel_category_values)
-        )
+        # multiple_categories_str_cycle = cycle(
+        #     random.choices(VOCAB[0:20], k=n_multilabel_category_values)
+        # )
 
         df = pd.DataFrame(
             {
