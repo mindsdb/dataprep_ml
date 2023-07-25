@@ -1,4 +1,4 @@
-import random
+# import random
 import unittest
 from itertools import cycle
 from datetime import datetime, timedelta
@@ -13,7 +13,7 @@ from tests.utils.data_generation import (
     test_column_types,
     generate_short_sentences,
     generate_rich_sentences,
-    VOCAB,
+    # VOCAB,
 )
 
 
@@ -57,7 +57,7 @@ class TestInferTypes(unittest.TestCase):
         # Apparently for n_category_values = 10 it doesn't work
         n_category_values = 4
         categories_cycle = cycle(range(n_category_values))
-        n_multilabel_category_values = 25
+        # n_multilabel_category_values = 25
         # multiple_categories_str_cycle = cycle(
         #     random.choices(VOCAB[0:20], k=n_multilabel_category_values)
         # )
