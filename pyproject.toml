@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "dataprep_ml"}]
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.12"
+python = ">=3.8,<3.12"
 numpy = "^1"
 pandas = "^1"
 pydateinfer = "0.3.0"
