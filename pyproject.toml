@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dataprep-ml"
-version = "0.0.15"
+version = "0.0.16"
 description = "Automated dataframe analysis for Machine Learning pipelines."
 authors = ["MindsDB Inc. <hello@mindsdb.com>"]
 license = "GPL-3.0"
@@ -8,13 +8,13 @@ readme = "README.md"
 packages = [{include = "dataprep_ml"}]
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.10"
+python = ">=3.7,<3.12"
 numpy = "^1"
 pandas = "^1"
 pydateinfer = "0.3.0"
 python-dateutil = ">=2.1"
 scipy = ">=1.7.3"
-type-infer = ">=0.0.7"
+type-infer = ">=0.0.14"
 dataclasses-json = "^0.5.4"
 colorlog = "^6.5.0"
 pydantic = "^1.10.9"
