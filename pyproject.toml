@@ -10,11 +10,11 @@ packages = [{include = "dataprep_ml"}]
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 numpy = "^1"
-pandas = "^1"
+pandas = "^2"
 pydateinfer = "0.3.0"
 python-dateutil = ">=2.1"
 scipy = ">=1.7.3"
-type-infer = ">=0.0.14"
+type-infer = ">=0.0.15"
 dataclasses-json = "^0.5.4"
 colorlog = "^6.5.0"
 pydantic = "^1.10.9"
