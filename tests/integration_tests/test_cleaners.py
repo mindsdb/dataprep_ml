@@ -150,6 +150,5 @@ class TestCleaners(unittest.TestCase):
                            imputers={},
                            custom_cleaning_functions={})
         self.assertTrue(df_clean.equals(df_correct))
-        self.assertTrue(isinstance(df_clean, pd.DataFrame))  
         # TODO: better asserts here
-
+        self.assertTrue(isinstance(df_clean, pd.DataFrame))
