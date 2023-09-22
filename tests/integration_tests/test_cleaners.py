@@ -102,3 +102,54 @@ class TestCleaners(unittest.TestCase):
         assert cdf[num_zero_impute_col].iloc[0] == num_zero_target_value
         assert cdf[num_median_impute_col].iloc[0] == num_median_target_value
         assert cdf[cat_mode_impute_col].iloc[0] == cat_mode_target_value
+
+    def test_3_timeseries(self):
+        """ Dead-simple test for time-series cleaner.
+        """
+        x_correct = np.asarray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        y_correct = np.asarray(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+        z_correct = x_correct.copy()
+        df_correct = pd.DataFrame.from_records(
+            {'x': x_correct, 'y': y_correct, 'z': z_correct})
+        # setup corrupted DataFrame
+        x_corrupted = np.asarray([
+            1, 1, 1,
+            2,
+            3, 3, 3, 3,
+            4, 5, 6,
+            7, 7, 7, 7,
+            8, 9,
+            10, 10, 10])
+        y_corrupted = np.asarray([
+            '1', '1', '1',
+            '2',
+            '3', '3', '3', '3',
+            '4', '5', '6',
+            '7', '7', '7', '7',
+            '8', '9',
+            '10', '10', '10'
+        ])
+        z_corrupted = x_corrupted.copy()
+        df_corrupted = pd.DataFrame.from_records(
+            {'x': x_corrupted, 'y': y_corrupted, 'z': z_corrupted})
+        # inferred types are the same for both DataFrames
+        inferred_types = infer_types(df_correct, pct_invalid=0)
+        target = 'y'
+        tss = {
+            'is_timeseries': True,
+            'order_by': 'x'
+        }
+        df_clean = cleaner(data=df_corrupted,
+                           dtype_dict=inferred_types.dtypes,
+                           pct_invalid=0.01,
+                           identifiers={},
+                           target=target,
+                           mode='train',
+                           timeseries_settings=tss,
+                           anomaly_detection=False,
+                           imputers={},
+                           custom_cleaning_functions={})
+        self.assertTrue(df_clean.equals(df_correct))
+        self.assertTrue(isinstance(df_clean, pd.DataFrame))  
+        # TODO: better asserts here
+

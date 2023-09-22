@@ -370,16 +370,68 @@ def _get_columns_to_clean(data: pd.DataFrame, dtype_dict: Dict[str, dtype], mode
     return cleanable_columns
 
 
-def clean_timeseries(df: pd.DataFrame, tss: Dict) -> pd.DataFrame:
+def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
     """
-    All timeseries-specific cleaning logic goes here. Currently:
+        All timeseries-specific cleaning logic goes here. Currently:
+            1) Any row with `nan`-valued order-by measurements is dropped.
+            2) Rows with duplicated time-stamps are trated the following way:
+               - columns that are numerical are averaged
+               - for non-numerical columns, only the first duplicate is kept.
 
-    1) Any row with `nan`-valued order-by measurements is dropped.
-
-    :param df: data.
-    :param tss: timeseries settings
-    :return: cleaned data.
+        :param df: data.
+        :param tss: timeseries settings
+        :return: cleaned data.
     """
+    # locate and drop rows with invalid (None, Nan, NaT) timestamps
     invalid_rows = df[df[tss['order_by']].isna()].index
     df = df.drop(invalid_rows)
+    # build mask with duplicated timestamps
+    df = df.reset_index(drop=True)
+    dup_ts_mask = df[tss['order_by']].duplicated(keep=False)
+    # return if no duplicated indices are found
+    if dup_ts_mask.sum() == 0:
+        return df
+    # find indices with duplicated timestamps
+    dup_ts_idx = np.where(dup_ts_mask)[0]
+    # build groups of duplicated indices
+    dup_idx_groups = []
+    curr_group = []
+    for idx, idx_next in zip(dup_ts_idx[:-1:],
+                             dup_ts_idx[1::]):
+        curr_group.append(idx)
+        if idx_next - idx > 1 or idx_next == dup_ts_idx[-1]:
+            g = np.asarray(curr_group)
+            dup_idx_groups.append(g)
+            curr_group = []
+    # average numerical columns in groups
+    # keep the first value for non-numerical columns
+    avg_groups = []
+    for grp in dup_idx_groups:
+        avg_num_row = df.loc[grp].mean(axis=0, numeric_only=True)
+        num_data_float = pd.DataFrame(avg_num_row).transpose()
+        row = None
+        # respect original types
+        num_data = pd.DataFrame()
+        num_cols = list(num_data_float.columns)
+        for nc in num_cols:
+            col_dtype = df.dtypes[nc]
+            num_data[nc] = num_data_float[nc].values.astype(col_dtype) 
+        # handle case where all columns are numeric
+        if len(num_cols) == len(df.columns):
+            row = num_data
+        else:
+            non_num_row = df.loc[grp].iloc[0].drop(num_cols)
+            non_num_data = pd.DataFrame(non_num_row).transpose()
+            non_num_data.reset_index(drop=True, inplace=True)
+            row = num_data.join(non_num_data)
+        avg_groups.append(row)
+    avg_groups = pd.concat(avg_groups, axis=0)
+    # remove duplicates
+    df = df[~dup_ts_mask]
+    # append averaged rows
+    df = pd.concat([df, avg_groups], axis=0)
+    # sort to bring back balance to the force
+    df = df.sort_values(tss['order_by'])
+    df = df.reset_index(drop=True)
+
     return df
