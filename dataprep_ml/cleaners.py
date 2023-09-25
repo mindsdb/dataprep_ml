@@ -415,7 +415,7 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
         num_cols = list(num_data_float.columns)
         for nc in num_cols:
             col_dtype = df.dtypes[nc]
-            num_data[nc] = num_data_float[nc].values.astype(col_dtype) 
+            num_data[nc] = num_data_float[nc].values.astype(col_dtype)
         # handle case where all columns are numeric
         if len(num_cols) == len(df.columns):
             row = num_data
