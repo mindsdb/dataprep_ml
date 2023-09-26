@@ -416,14 +416,15 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
         for nc in num_cols:
             col_dtype = df.dtypes[nc]
             num_data[nc] = num_data_float[nc].values.astype(col_dtype)
+        num_data = num_data.reset_index(drop=True)
         # handle case where all columns are numeric
-        if len(num_cols) == len(df.columns):
+        if num_data.shape[1] == len(df.columns):
             row = num_data
         else:
             non_num_row = df.loc[grp].iloc[0].drop(num_cols)
             non_num_data = pd.DataFrame(non_num_row).transpose()
-            non_num_data.reset_index(drop=True, inplace=True)
-            row = num_data.join(non_num_data)
+            non_num_data = non_num_data.reset_index(drop=True)
+            row = num_data.join(non_num_data, how='right')
         avg_groups.append(row)
     avg_groups = pd.concat(avg_groups, axis=0)
     # remove duplicates

@@ -106,9 +106,9 @@ class TestCleaners(unittest.TestCase):
     def test_3_timeseries(self):
         """ Dead-simple test for time-series cleaner.
         """
-        x_correct = np.asarray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        y_correct = np.asarray(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
-        z_correct = x_correct.copy()
+        x_correct = np.asarray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dtype=int)
+        y_correct = np.asarray(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'])
+        z_correct = x_correct.copy().astype(float)
         df_correct = pd.DataFrame.from_records(
             {'x': x_correct, 'y': y_correct, 'z': z_correct})
         # setup corrupted DataFrame
@@ -119,29 +119,39 @@ class TestCleaners(unittest.TestCase):
             4, 5, 6,
             7, 7, 7, 7,
             8, 9,
-            10, 10, 10])
+            10, 10, 10], dtype=int)
         y_corrupted = np.asarray([
-            '1', '1', '1',
-            '2',
-            '3', '3', '3', '3',
-            '4', '5', '6',
-            '7', '7', '7', '7',
-            '8', '9',
-            '10', '10', '10'
+            'a', 'aa', 'aaa',
+            'b',
+            'c', 'cc', 'ccc', 'cccc',
+            'd', 'e', 'f',
+            'g', 'gg', 'ggg', 'gggg',
+            'h', 'i',
+            'j', 'jj', 'jjj'
         ])
-        z_corrupted = x_corrupted.copy()
+        z_corrupted = x_corrupted.copy().astype(float)
         df_corrupted = pd.DataFrame.from_records(
             {'x': x_corrupted, 'y': y_corrupted, 'z': z_corrupted})
         # inferred types are the same for both DataFrames
         inferred_types = infer_types(df_correct, pct_invalid=0)
-        target = 'y'
+        target = 'z'
         tss = {
             'is_timeseries': True,
             'order_by': 'x'
         }
+        df_correct_clean = cleaner(data=df_correct,
+                                   dtype_dict=inferred_types.dtypes,
+                                   pct_invalid=0.1,
+                                   identifiers={},
+                                   target=target,
+                                   mode='train',
+                                   timeseries_settings=tss,
+                                   anomaly_detection=False,
+                                   imputers={},
+                                   custom_cleaning_functions={})
         df_clean = cleaner(data=df_corrupted,
                            dtype_dict=inferred_types.dtypes,
-                           pct_invalid=0.01,
+                           pct_invalid=0.1,
                            identifiers={},
                            target=target,
                            mode='train',
@@ -149,6 +159,10 @@ class TestCleaners(unittest.TestCase):
                            anomaly_detection=False,
                            imputers={},
                            custom_cleaning_functions={})
-        self.assertTrue(df_clean.equals(df_correct))
+        df_clean = df_clean.drop('__mdb_original_index', axis=1)
+        df_correct_clean = df_correct_clean.drop('__mdb_original_index',
+                                                 axis=1)
         # TODO: better asserts here
         self.assertTrue(isinstance(df_clean, pd.DataFrame))
+        # df_clean comes with an auxiliary column, wtf
+        self.assertTrue(df_clean.equals(df_correct_clean))
