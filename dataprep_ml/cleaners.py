@@ -370,21 +370,18 @@ def _get_columns_to_clean(data: pd.DataFrame, dtype_dict: Dict[str, dtype], mode
     return cleanable_columns
 
 
-def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
-    """
-        All timeseries-specific cleaning logic goes here. Currently:
-            1) Any row with `nan`-valued order-by measurements is dropped.
-            2) Rows with duplicated time-stamps are trated the following way:
-               - columns that are numerical are averaged
-               - for non-numerical columns, only the first duplicate is kept.
+def _fix_duplicates(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
+    ''' Removes duplicate timestamps from DataFrame.
 
-        :param df: data.
-        :param tss: timeseries settings
-        :return: cleaned data.
-    """
-    # locate and drop rows with invalid (None, Nan, NaT) timestamps
-    invalid_rows = df[df[tss['order_by']].isna()].index
-    df = df.drop(invalid_rows)
+        :param df: DataFrame with input data.
+        :param order_by: name of column to order DataFrame
+                         i.e. the timestamp column.
+
+        Groups of duplicates with numerical data are averaged
+        to form a single entry, while for groups of duplicates
+        with non-numerical data the duplicates are discarded and
+        only the first occurence is kept.
+    '''
     # build mask with duplicated timestamps
     df = df.reset_index(drop=True)
     dup_ts_mask = df[tss['order_by']].duplicated(keep=False)
@@ -433,6 +430,37 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
     df = pd.concat([df, avg_groups], axis=0)
     # sort to bring back balance to the force
     df = df.sort_values(tss['order_by'])
+    df = df.reset_index(drop=True)
+
+    return df
+
+
+def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
+    """
+        All timeseries-specific cleaning logic goes here. Currently:
+            1) Any row with `nan`-valued order-by measurements is dropped.
+            2) Rows with duplicated time-stamps are trated the following way:
+               - columns that are numerical are averaged
+               - for non-numerical columns, only the first duplicate is kept.
+
+        :param df: data.
+        :param tss: timeseries settings
+        :return: cleaned data.
+    """
+    # locate and drop rows with invalid (None, Nan, NaT) timestamps
+    invalid_rows = df[df[tss['order_by']].isna()].index
+    df = df.drop(invalid_rows)
+
+    # fix duplicates by group
+    if 'group_by' in tss:
+        correct_dfs = []
+        grps = df.groupby(tss['group_by'])
+        for _, g in grps:
+            correct_dfs += [_fix_duplicates(g, tss)]
+        df = pd.concat(correct_dfs)
+    else:
+        df = _fix_duplicates(df, tss)
+
     df = df.reset_index(drop=True)
 
     return df

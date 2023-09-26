@@ -9,6 +9,7 @@ from dataprep_ml.imputers import NumericalImputer, CategoricalImputer
 
 
 class TestCleaners(unittest.TestCase):
+
     def test_0_airline_sentiment(self):
         df = pd.read_csv("tests/data/airline_sentiment_sample.csv")
         inferred_types = infer_types(df, pct_invalid=0)
@@ -104,40 +105,70 @@ class TestCleaners(unittest.TestCase):
         assert cdf[cat_mode_impute_col].iloc[0] == cat_mode_target_value
 
     def test_3_timeseries(self):
-        """ Dead-simple test for time-series cleaner.
+        """ Unit test for time series cleaner.
+
+            This test checks that duplicated time-stamps are properly
+            handled by the cleaner.
         """
-        x_correct = np.asarray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dtype=int)
-        y_correct = np.asarray(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'])
-        z_correct = x_correct.copy().astype(float)
-        df_correct = pd.DataFrame.from_records(
-            {'x': x_correct, 'y': y_correct, 'z': z_correct})
+        # setup correct dataframe
+        x_correct = np.asarray([
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            dtype=int)
+        y_correct = np.asarray([
+            'a', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+            'a', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+            'a', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+        z_correct = np.asarray([
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            dtype=float)
+        g_correct = np.asarray([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            dtype=int)
+        df_correct = pd.DataFrame.from_records({
+            'x': x_correct,
+            'y': y_correct,
+            'z': z_correct,
+            'group_id': g_correct})
+
         # setup corrupted DataFrame
-        x_corrupted = np.asarray([
-            1, 1, 1,
-            2,
-            3, 3, 3, 3,
-            4, 5, 6,
-            7, 7, 7, 7,
-            8, 9,
-            10, 10, 10], dtype=int)
-        y_corrupted = np.asarray([
-            'a', 'aa', 'aaa',
-            'b',
-            'c', 'cc', 'ccc', 'cccc',
-            'd', 'e', 'f',
-            'g', 'gg', 'ggg', 'gggg',
-            'h', 'i',
-            'j', 'jj', 'jjj'
-        ])
-        z_corrupted = x_corrupted.copy().astype(float)
-        df_corrupted = pd.DataFrame.from_records(
-            {'x': x_corrupted, 'y': y_corrupted, 'z': z_corrupted})
+        x_corrupt = np.asarray([
+            1, 1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 10, 10,
+            1, 2, 2, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9, 10, 10,
+            1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 9, 9, 9, 10],
+            dtype=int)
+        y_corrupt = np.asarray([
+            'a', '0', '1', '2', '3', '4', '0', '5', '6', '7', '8', '9', '10', '0', '0',
+            'a', '2', '0', '0', '3', '4', '5', '0', '0', '6', '7', '8', '9', '10', '0',
+            'a', '2', '3', '0', '0', '0', '4', '5', '6', '7', '8', '9', '0', '0', '10'])
+        z_corrupt = np.asarray([
+            1, 1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 10, 10,
+            1, 2, 2, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9, 10, 10,
+            1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 9, 9, 9, 10],
+            dtype=float)
+        g_corrupt = np.asarray([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            dtype=int)
+        df_corrupt = pd.DataFrame.from_records({
+            'x': x_corrupt,
+            'y': y_corrupt,
+            'z': z_corrupt,
+            'group_id': g_corrupt})
+
         # inferred types are the same for both DataFrames
         inferred_types = infer_types(df_correct, pct_invalid=0)
         target = 'z'
         tss = {
             'is_timeseries': True,
-            'order_by': 'x'
+            'order_by': 'x',
+            'group_by': 'group_id'
         }
         df_correct_clean = cleaner(data=df_correct,
                                    dtype_dict=inferred_types.dtypes,
@@ -149,7 +180,7 @@ class TestCleaners(unittest.TestCase):
                                    anomaly_detection=False,
                                    imputers={},
                                    custom_cleaning_functions={})
-        df_clean = cleaner(data=df_corrupted,
+        df_clean = cleaner(data=df_corrupt,
                            dtype_dict=inferred_types.dtypes,
                            pct_invalid=0.1,
                            identifiers={},
