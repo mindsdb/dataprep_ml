@@ -371,7 +371,7 @@ def _get_columns_to_clean(data: pd.DataFrame, dtype_dict: Dict[str, dtype], mode
 
 
 def _fix_duplicates(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
-    ''' Removes duplicate timestamps from DataFrame.
+    """ Removes duplicate timestamps from DataFrame.
 
         :param df: DataFrame with input data.
         :param order_by: name of column to order DataFrame
@@ -381,7 +381,7 @@ def _fix_duplicates(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
         to form a single entry, while for groups of duplicates
         with non-numerical data the duplicates are discarded and
         only the first occurence is kept.
-    '''
+    """
     # build mask with duplicated timestamps
     df = df.reset_index(drop=True)
     dup_ts_mask = df[tss['order_by']].duplicated(keep=False)
@@ -452,9 +452,9 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
     df = df.drop(invalid_rows)
 
     # fix duplicates by group
-    if 'group_by' in tss:
+    if tss.get('group_by', []):
         correct_dfs = []
-        grps = df.groupby(tss['group_by'])
+        grps = df.groupby(by=tss['group_by'])
         for _, g in grps:
             correct_dfs += [_fix_duplicates(g, tss)]
         df = pd.concat(correct_dfs)
