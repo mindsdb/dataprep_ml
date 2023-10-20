@@ -211,7 +211,7 @@ def _standardize_num_array(element: object) -> Optional[Union[List[float], float
             element = _clean_float(element)
         else:
             element = [float(x) for x in element.split(" ")]
-    except Exception:
+    except ValueError:
         pass
 
     return element
