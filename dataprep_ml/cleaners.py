@@ -172,6 +172,7 @@ def _standardize_datetime(element: pd.Series) -> pd.Series:
 # Tags/Sequences
 # ------------------------- #
 
+
 # TODO Make it split on something other than commas
 def _tags_to_tuples(tags_str: str) -> Tuple[str]:
     """
