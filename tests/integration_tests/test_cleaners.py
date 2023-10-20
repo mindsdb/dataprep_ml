@@ -157,10 +157,11 @@ class TestCleaners(unittest.TestCase):
             3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
             dtype=int)
         df_corrupt = pd.DataFrame.from_records({
+            'group_id': g_corrupt,
             'x': x_corrupt,
             'y': y_corrupt,
             'z': z_corrupt,
-            'group_id': g_corrupt})
+        })
 
         # inferred types are the same for both DataFrames
         inferred_types = infer_types(df_correct, pct_invalid=0)
@@ -193,7 +194,5 @@ class TestCleaners(unittest.TestCase):
         df_clean = df_clean.drop('__mdb_original_index', axis=1)
         df_correct_clean = df_correct_clean.drop('__mdb_original_index',
                                                  axis=1)
-        # TODO: better asserts here
-        self.assertTrue(isinstance(df_clean, pd.DataFrame))
-        # df_clean comes with an auxiliary column, wtf
+
         self.assertTrue(df_clean.equals(df_correct_clean))

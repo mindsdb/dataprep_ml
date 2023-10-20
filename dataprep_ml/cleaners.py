@@ -384,22 +384,37 @@ def _fix_duplicates(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
     """
     # build mask with duplicated timestamps
     df = df.reset_index(drop=True)
-    dup_ts_mask = df[tss['order_by']].duplicated(keep=False)
+    dup_ts_mask = df[tss['order_by']].duplicated(keep='first')
     # return if no duplicated indices are found
     if dup_ts_mask.sum() == 0:
         return df
-    # find indices with duplicated timestamps
-    dup_ts_idx = np.where(dup_ts_mask)[0]
+
     # build groups of duplicated indices
     dup_idx_groups = []
     curr_group = []
-    for idx, idx_next in zip(dup_ts_idx[:-1:],
-                             dup_ts_idx[1::]):
-        curr_group.append(idx)
-        if idx_next - idx > 1 or idx_next == dup_ts_idx[-1]:
+    for j, dup_idx in enumerate(df.index[:-1]):
+        # check if current and next items are duplicated
+        is_curr_dup = dup_ts_mask.values[j]
+        is_next_dup = dup_ts_mask.values[j + 1]
+        # current and next item are not duplicates
+        if (not is_curr_dup) and (not is_next_dup):
+            continue
+        # next item is marked as duplicated
+        # -> creates a new group and adds item
+        if not is_curr_dup and is_next_dup:
+            curr_group = []
+            curr_group.append(dup_idx)
+        # current and next item are marked as duplicated
+        # -> adds and item
+        if is_curr_dup and is_next_dup:
+            curr_group.append(dup_idx)
+        # current item is marked as duplicated and next
+        # item is not, or reached end of data
+        # -> add item and close group
+        if (is_curr_dup and (not is_next_dup)) or (j == len(df) - 1):
+            curr_group.append(dup_idx)
             g = np.asarray(curr_group)
             dup_idx_groups.append(g)
-            curr_group = []
     # average numerical columns in groups
     # keep the first value for non-numerical columns
     avg_groups = []
@@ -423,16 +438,12 @@ def _fix_duplicates(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
             non_num_data = non_num_data.reset_index(drop=True)
             row = num_data.join(non_num_data, how='right')
         avg_groups.append(row)
-    avg_groups = pd.concat(avg_groups, axis=0)
-    # remove duplicates
-    df = df[~dup_ts_mask]
-    # append averaged rows
-    df = pd.concat([df, avg_groups], axis=0)
-    # sort to bring back balance to the force
-    df = df.sort_values(tss['order_by'])
-    df = df.reset_index(drop=True)
+    dedup = pd.concat(avg_groups + [df.loc[~dup_ts_mask], ], axis=0)
+    mask = ~dedup[tss['order_by']].duplicated(keep='first')
+    dedup = dedup.loc[mask]
+    dedup = dedup.sort_values(by=tss['order_by'])
 
-    return df
+    return dedup
 
 
 def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
@@ -451,8 +462,10 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
     invalid_rows = df[df[tss['order_by']].isna()].index
     df = df.drop(invalid_rows)
 
+    # save original order of columns
+    orig_cols = deepcopy(df.columns.to_list())
     # fix duplicates by group
-    if tss.get('group_by', []):
+    if tss.get('group_by', False):
         correct_dfs = []
         grps = df.groupby(by=tss['group_by'])
         for _, g in grps:
@@ -460,7 +473,7 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
         df = pd.concat(correct_dfs)
     else:
         df = _fix_duplicates(df, tss)
-
     df = df.reset_index(drop=True)
+    df = df.reindex(orig_cols, axis=1)
 
     return df
