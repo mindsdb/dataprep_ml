@@ -163,11 +163,10 @@ def _standardize_datetime(element: pd.Series) -> pd.Series:
         result = pd.to_datetime(element,
                                 infer_datetime_format=True,
                                 format='mixed').apply(lambda x: x.timestamp())
-    except Exception as error:
+    except ValueError:
         pass
 
     return result
-
 
 # ------------------------- #
 # Tags/Sequences
@@ -211,7 +210,7 @@ def _standardize_num_array(element: object) -> Optional[Union[List[float], float
             element = _clean_float(element)
         else:
             element = [float(x) for x in element.split(" ")]
-    except ValueError:
+    except Exception:
         pass
 
     return element
