@@ -149,7 +149,24 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 # ------------------------- #
 
 def _standardize_datetime(element: pd.Series) -> pd.Series:
-    return pd.to_datetime(element, infer_datetime_format=True).apply(lambda x: x.timestamp())
+    """ Converts pandas.Series into pandas.Timestamp Series.
+
+        :param element: pandas.Series
+        :returns pandas.Series, None
+
+        :note
+            Returns `None` if the routine fails to extract
+            a `pandas.Timestamp` from any entry of `element`.
+    """
+    result = None
+    try:
+        result = pd.to_datetime(element,
+                                infer_datetime_format=True,
+                                format='mixed').apply(lambda x: x.timestamp())
+    except Exception as error:
+        pass
+
+    return result
 
 
 # ------------------------- #
