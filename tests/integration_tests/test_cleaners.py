@@ -9,6 +9,7 @@ from dataprep_ml.imputers import NumericalImputer, CategoricalImputer
 
 
 class TestCleaners(unittest.TestCase):
+
     def test_0_airline_sentiment(self):
         df = pd.read_csv("tests/data/airline_sentiment_sample.csv")
         inferred_types = infer_types(df, pct_invalid=0)
@@ -102,3 +103,118 @@ class TestCleaners(unittest.TestCase):
         assert cdf[num_zero_impute_col].iloc[0] == num_zero_target_value
         assert cdf[num_median_impute_col].iloc[0] == num_median_target_value
         assert cdf[cat_mode_impute_col].iloc[0] == cat_mode_target_value
+
+    def test_3_timeseries_dedupe(self):
+        """ Unit test for time series cleaner.
+
+            This test checks that duplicated time-stamps are properly
+            handled by the cleaner.
+        """
+        # setup correct dataframe
+        x_correct = np.asarray([
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            dtype=int)
+        y_correct = np.asarray([
+            'a', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+            'a', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+            'a', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+        z_correct = np.asarray([
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            dtype=float)
+        g_correct = np.asarray([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            dtype=int)
+        df_correct = pd.DataFrame.from_records({
+            'x': x_correct,
+            'y': y_correct,
+            'z': z_correct,
+            'group_id': g_correct})
+
+        # setup corrupted DataFrame
+        x_corrupt = np.asarray([
+            1, 1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 10, 10,
+            1, 2, 2, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9, 10, 10,
+            1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 9, 9, 9, 10],
+            dtype=int)
+        y_corrupt = np.asarray([
+            'a', '0', '1', '2', '3', '4', '0', '5', '6', '7', '8', '9', '10', '0', '0',
+            'a', '2', '0', '0', '3', '4', '5', '0', '0', '6', '7', '8', '9', '10', '0',
+            'a', '2', '3', '0', '0', '0', '4', '5', '6', '7', '8', '9', '0', '0', '10'])
+        z_corrupt = np.asarray([
+            1, 1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 10, 10,
+            1, 2, 2, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9, 10, 10,
+            1, 2, 3, 3, 3, 3, 4, 5, 6, 7, 8, 9, 9, 9, 10],
+            dtype=float)
+        g_corrupt = np.asarray([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            dtype=int)
+        df_corrupt = pd.DataFrame.from_records({
+            'group_id': g_corrupt,
+            'x': x_corrupt,
+            'y': y_corrupt,
+            'z': z_corrupt,
+        })
+
+        # inferred types are the same for both DataFrames
+        inferred_types = infer_types(df_correct, pct_invalid=0)
+        target = 'z'
+        tss = {
+            'is_timeseries': True,
+            'order_by': 'x',
+            'group_by': 'group_id'
+        }
+        df_correct_clean = cleaner(data=df_correct,
+                                   dtype_dict=inferred_types.dtypes,
+                                   pct_invalid=0.1,
+                                   identifiers={},
+                                   target=target,
+                                   mode='train',
+                                   timeseries_settings=tss,
+                                   anomaly_detection=False,
+                                   imputers={},
+                                   custom_cleaning_functions={})
+        df_clean = cleaner(data=df_corrupt,
+                           dtype_dict=inferred_types.dtypes,
+                           pct_invalid=0.1,
+                           identifiers={},
+                           target=target,
+                           mode='train',
+                           timeseries_settings=tss,
+                           anomaly_detection=False,
+                           imputers={},
+                           custom_cleaning_functions={})
+        df_clean = df_clean.drop('__mdb_original_index', axis=1)
+        df_correct_clean = df_correct_clean.drop('__mdb_original_index',
+                                                 axis=1)
+
+        self.assertTrue(df_clean.equals(df_correct_clean))
+
+    def test_4_timeseries_dedupe(self):
+        """ Another test for timeseries deduping. """
+        data = pd.read_csv('tests/data/arrivals.csv')
+        data = data[data['Country'].isin(['US', 'Japan'])]
+        target_len = len(data)
+        data = pd.concat([data, data[data['Country'] == 'Japan']], ignore_index=True)  # force duplication of one series
+        tss = {
+            'is_timeseries': True,
+            'order_by': 'T',
+            'group_by': 'Country'
+        }
+        inferred_types = infer_types(data, pct_invalid=0)
+        transformed = cleaner(data=data,
+                              dtype_dict=inferred_types.dtypes,
+                              pct_invalid=0.1,
+                              identifiers={},
+                              target='Traffic',
+                              mode='train',
+                              anomaly_detection=False,
+                              timeseries_settings=tss)
+        assert len(transformed) == target_len
