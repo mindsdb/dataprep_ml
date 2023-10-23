@@ -104,7 +104,7 @@ class TestCleaners(unittest.TestCase):
         assert cdf[num_median_impute_col].iloc[0] == num_median_target_value
         assert cdf[cat_mode_impute_col].iloc[0] == cat_mode_target_value
 
-    def test_3_timeseries(self):
+    def test_3_timeseries_dedupe(self):
         """ Unit test for time series cleaner.
 
             This test checks that duplicated time-stamps are properly
@@ -196,3 +196,25 @@ class TestCleaners(unittest.TestCase):
                                                  axis=1)
 
         self.assertTrue(df_clean.equals(df_correct_clean))
+
+    def test_4_timeseries_dedupe(self):
+        """ Another test for timeseries deduping. """
+        data = pd.read_csv('tests/data/arrivals.csv')
+        data = data[data['Country'].isin(['US', 'Japan'])]
+        target_len = len(data)
+        data = pd.concat([data, data[data['Country'] == 'Japan']], ignore_index=True)  # force duplication of one series
+        tss = {
+            'is_timeseries': True,
+            'order_by': 'T',
+            'group_by': 'Country'
+        }
+        inferred_types = infer_types(data, pct_invalid=0)
+        transformed = cleaner(data=data,
+                              dtype_dict=inferred_types.dtypes,
+                              pct_invalid=0.1,
+                              identifiers={},
+                              target='Traffic',
+                              mode='train',
+                              anomaly_detection=False,
+                              timeseries_settings=tss)
+        assert len(transformed) == target_len
