@@ -319,7 +319,7 @@ def _timeseries_edge_case_detection(data: pd.DataFrame, timeseries_settings: Dic
 
     if timeseries_settings.get('window', None) is not None:
         window = timeseries_settings.get('window', 0)
-        assert len(data), "Window size is greater than input data length."
+        assert len(data) >= window, "Window size is greater than input data length."
 
     return
 
