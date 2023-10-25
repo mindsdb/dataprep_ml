@@ -78,9 +78,7 @@ def _check_if_invalid(new_data: pd.Series, pct_invalid: float, col_name: str):
     """  # noqa
 
     chk_invalid = (
-            100
-            * (len(new_data) - len([x for x in new_data if x is not None]))
-            / len(new_data)
+        100 * (len(new_data) - len([x for x in new_data if x is not None])) / len(new_data)
     )
 
     if chk_invalid > pct_invalid:
