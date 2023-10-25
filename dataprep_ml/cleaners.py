@@ -42,6 +42,8 @@ def cleaner(
     data = _remove_columns(data, identifiers, target, mode, timeseries_settings,
                            anomaly_detection, dtype_dict)
 
+    _timeseries_edge_case_detection(data, timeseries_settings)  # raise assertion errors for edge cases
+
     data['__mdb_original_index'] = np.arange(len(data))
 
     for col in _get_columns_to_clean(data, dtype_dict, mode, target):
@@ -302,6 +304,25 @@ def _rm_rows_w_empty_targets(df: pd.DataFrame, target: str) -> pd.DataFrame:
     return df
 
 
+def _timeseries_edge_case_detection(data: pd.DataFrame, timeseries_settings: Dict):
+    """
+    Detect timeseries edge cases and raise assertion errors:
+
+    1) if window size is greater than dataset length
+
+    :param data: The raw data
+    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be the default object
+
+    :returns: None
+
+    """
+
+    if timeseries_settings.get('window', None) is not None:
+        window = timeseries_settings.get('window', 0)
+        assert len(data), "Window size is greater than input data length."
+
+    return
+
 def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: str,
                     mode: str, timeseries_settings: Dict, anomaly_detection: bool,
                     dtype_dict: Dict[str, dtype]) -> pd.DataFrame:
@@ -318,6 +339,8 @@ def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: 
 
     :returns: A (new) dataframe without the dropped columns
     """ # noqa
+
+
     data = deepcopy(data)
     to_drop = [*[x for x in identifiers.keys() if x != target],
                *[x for x in data.columns if x in dtype_dict and dtype_dict[x] == dtype.invalid]]
