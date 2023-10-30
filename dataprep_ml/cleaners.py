@@ -13,16 +13,16 @@ from dataprep_ml.imputers import BaseImputer
 
 
 def cleaner(
-    data: pd.DataFrame,
-    dtype_dict: Dict[str, str],
-    pct_invalid: float,
-    target: str,  # TODO: turn into optional (requires logic changes). pass inside a normal dict.
-    timeseries_settings: Dict,  # TODO: move TS logic into separate cleaner and call sequentially from lw
-    anomaly_detection: bool,  # TODO: pass inside a dict?
-    mode: Optional[str] = 'train',  # TODO: pass inside a dict? add unit tests for missing param
-    identifiers: Optional[Dict[str, str]] = None,  # TODO: add unit test for no identifiers provided
-    imputers: Dict[str, BaseImputer] = {},  # TODO: pass inside a normal dict
-    custom_cleaning_functions: Dict[str, str] = {}
+        data: pd.DataFrame,
+        dtype_dict: Dict[str, str],
+        pct_invalid: float,
+        target: str,  # TODO: turn into optional (requires logic changes). pass inside a normal dict.
+        timeseries_settings: Dict,  # TODO: move TS logic into separate cleaner and call sequentially from lw
+        anomaly_detection: bool,  # TODO: pass inside a dict?
+        mode: Optional[str] = 'train',  # TODO: pass inside a dict? add unit tests for missing param
+        identifiers: Optional[Dict[str, str]] = None,  # TODO: add unit test for no identifiers provided
+        imputers: Dict[str, BaseImputer] = {},  # TODO: pass inside a normal dict
+        custom_cleaning_functions: Dict[str, str] = {}
 ) -> pd.DataFrame:
     """
     The cleaner is a function which takes in the raw data, plus additional information about it's types and about the problem. Based on this it generates a "clean" representation of the data, where each column has an ideal standardized type and all malformed or otherwise missing or invalid elements are turned into ``None``. Optionally, these ``None`` values can be replaced with imputers.
@@ -38,9 +38,11 @@ def cleaner(
     :param anomaly_detection: Are we detecting anomalies with this predictor?
 
     :returns: The cleaned data
-    """ # noqa
+    """  # noqa
     data = _remove_columns(data, identifiers, target, mode, timeseries_settings,
                            anomaly_detection, dtype_dict)
+
+    _timeseries_edge_case_detection(data, timeseries_settings)  # raise assertion errors for edge cases
 
     data['__mdb_original_index'] = np.arange(len(data))
 
@@ -76,9 +78,7 @@ def _check_if_invalid(new_data: pd.Series, pct_invalid: float, col_name: str):
     """  # noqa
 
     chk_invalid = (
-        100
-        * (len(new_data) - len([x for x in new_data if x is not None]))
-        / len(new_data)
+        100 * (len(new_data) - len([x for x in new_data if x is not None])) / len(new_data)
     )
 
     if chk_invalid > pct_invalid:
@@ -96,7 +96,7 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
     :returns: A 2-tuple.
         0: The appropriate function that will pre-process (clean) data of specified dtype.
         1: Whether the function is "vectorized": applied per item (False), or over entire column at once (True).
-    """ # noqa
+    """  # noqa
     vec = False
 
     if data_dtype in custom_cleaning_functions:
@@ -124,14 +124,14 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
         clean_func = _clean_quantity
 
     elif data_dtype in (
-        dtype.short_text,
-        dtype.rich_text,
-        dtype.categorical,
-        dtype.binary,
-        dtype.audio,
-        dtype.image,
-        dtype.video,
-        dtype.cat_tsarray
+            dtype.short_text,
+            dtype.rich_text,
+            dtype.categorical,
+            dtype.binary,
+            dtype.audio,
+            dtype.image,
+            dtype.video,
+            dtype.cat_tsarray
     ):
         clean_func = _clean_text
 
@@ -252,10 +252,12 @@ def _clean_quantity(element: pd.Series) -> pd.Series:
     """
     Given a quantity, clean and convert it into float numeric format. If element is NaN, or inf, then returns None.
     """
+
     def _no_symbols(elt):
         no_symbols = re.sub("[^0-9.,]", "", str(elt)).replace(",", ".")
         no_symbols = '0' if no_symbols == '' else no_symbols
         return float(no_symbols)
+
     element = element.apply(_no_symbols)
     return _clean_float(element)
 
@@ -302,6 +304,27 @@ def _rm_rows_w_empty_targets(df: pd.DataFrame, target: str) -> pd.DataFrame:
     return df
 
 
+def _timeseries_edge_case_detection(data: pd.DataFrame, timeseries_settings: Dict):
+    """
+    Detect timeseries edge cases and raise assertion errors:
+
+    1) if window size is greater than dataset length
+
+    :param data: The raw data
+    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be
+    the default object
+
+    :returns: None
+
+    """
+
+    if timeseries_settings.get('window', None) is not None:
+        window = timeseries_settings.get('window', 0)
+        assert len(data) >= window, "Window size is greater than input data length: increase input data length."
+
+    return
+
+
 def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: str,
                     mode: str, timeseries_settings: Dict, anomaly_detection: bool,
                     dtype_dict: Dict[str, dtype]) -> pd.DataFrame:
@@ -313,11 +336,13 @@ def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: 
     :param identifiers: A dict containing all identifier typed columns
     :param target: The target columns
     :param mode: Can be "predict" or "train"
-    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be the default object
+    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be 
+    the default object
     :param anomaly_detection: Are we detecting anomalies with this predictor?
 
     :returns: A (new) dataframe without the dropped columns
-    """ # noqa
+    """  # noqa
+
     data = deepcopy(data)
     to_drop = [*[x for x in identifiers.keys() if x != target],
                *[x for x in data.columns if x in dtype_dict and dtype_dict[x] == dtype.invalid]]
@@ -336,10 +361,10 @@ def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: 
         data = _rm_rows_w_empty_targets(data, target)
     if mode == "predict":
         if (
-            target in data.columns
-            and (not timeseries_settings.get('is_timeseries', False) or
-                 not timeseries_settings.get('use_previous_target', False))
-            and not anomaly_detection
+                target in data.columns
+                and (not timeseries_settings.get('is_timeseries', False) or
+                     not timeseries_settings.get('use_previous_target', False))
+                and not anomaly_detection
         ):
             data = data.drop(columns=[target])
 
@@ -358,7 +383,7 @@ def _get_columns_to_clean(data: pd.DataFrame, dtype_dict: Dict[str, dtype], mode
     :param mode: Can be "predict" or "train"
 
     :returns: A list of columns that we want to clean
-    """ # noqa
+    """  # noqa
 
     cleanable_columns = []
     for name, _ in dtype_dict.items():
