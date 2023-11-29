@@ -13,16 +13,16 @@ from dataprep_ml.imputers import BaseImputer
 
 
 def cleaner(
-    data: pd.DataFrame,
-    dtype_dict: Dict[str, str],
-    pct_invalid: float,
-    target: str,  # TODO: turn into optional (requires logic changes). pass inside a normal dict.
-    timeseries_settings: Dict,  # TODO: move TS logic into separate cleaner and call sequentially from lw
-    anomaly_detection: bool,  # TODO: pass inside a dict?
-    mode: Optional[str] = 'train',  # TODO: pass inside a dict? add unit tests for missing param
-    identifiers: Optional[Dict[str, str]] = None,  # TODO: add unit test for no identifiers provided
-    imputers: Dict[str, BaseImputer] = {},  # TODO: pass inside a normal dict
-    custom_cleaning_functions: Dict[str, str] = {}
+        data: pd.DataFrame,
+        dtype_dict: Dict[str, str],
+        pct_invalid: float,
+        target: str,  # TODO: turn into optional (requires logic changes). pass inside a normal dict.
+        timeseries_settings: Dict,  # TODO: move TS logic into separate cleaner and call sequentially from lw
+        anomaly_detection: bool,  # TODO: pass inside a dict?
+        mode: Optional[str] = 'train',  # TODO: pass inside a dict? add unit tests for missing param
+        identifiers: Optional[Dict[str, str]] = None,  # TODO: add unit test for no identifiers provided
+        imputers: Dict[str, BaseImputer] = {},  # TODO: pass inside a normal dict
+        custom_cleaning_functions: Dict[str, str] = {}
 ) -> pd.DataFrame:
     """
     The cleaner is a function which takes in the raw data, plus additional information about it's types and about the problem. Based on this it generates a "clean" representation of the data, where each column has an ideal standardized type and all malformed or otherwise missing or invalid elements are turned into ``None``. Optionally, these ``None`` values can be replaced with imputers.
@@ -38,9 +38,11 @@ def cleaner(
     :param anomaly_detection: Are we detecting anomalies with this predictor?
 
     :returns: The cleaned data
-    """ # noqa
+    """  # noqa
     data = _remove_columns(data, identifiers, target, mode, timeseries_settings,
                            anomaly_detection, dtype_dict)
+
+    _timeseries_edge_case_detection(data, timeseries_settings)  # raise assertion errors for edge cases
 
     data['__mdb_original_index'] = np.arange(len(data))
 
@@ -76,9 +78,7 @@ def _check_if_invalid(new_data: pd.Series, pct_invalid: float, col_name: str):
     """  # noqa
 
     chk_invalid = (
-        100
-        * (len(new_data) - len([x for x in new_data if x is not None]))
-        / len(new_data)
+        100 * (len(new_data) - len([x for x in new_data if x is not None])) / len(new_data)
     )
 
     if chk_invalid > pct_invalid:
@@ -96,7 +96,7 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
     :returns: A 2-tuple.
         0: The appropriate function that will pre-process (clean) data of specified dtype.
         1: Whether the function is "vectorized": applied per item (False), or over entire column at once (True).
-    """ # noqa
+    """  # noqa
     vec = False
 
     if data_dtype in custom_cleaning_functions:
@@ -124,14 +124,14 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
         clean_func = _clean_quantity
 
     elif data_dtype in (
-        dtype.short_text,
-        dtype.rich_text,
-        dtype.categorical,
-        dtype.binary,
-        dtype.audio,
-        dtype.image,
-        dtype.video,
-        dtype.cat_tsarray
+            dtype.short_text,
+            dtype.rich_text,
+            dtype.categorical,
+            dtype.binary,
+            dtype.audio,
+            dtype.image,
+            dtype.video,
+            dtype.cat_tsarray
     ):
         clean_func = _clean_text
 
@@ -149,12 +149,29 @@ def get_cleaning_func(data_dtype: dtype, custom_cleaning_functions: Dict[str, st
 # ------------------------- #
 
 def _standardize_datetime(element: pd.Series) -> pd.Series:
-    return pd.to_datetime(element, infer_datetime_format=True).apply(lambda x: x.timestamp())
+    """ Converts pandas.Series into pandas.Timestamp Series.
 
+        :param element: pandas.Series
+        :returns pandas.Series, None
+
+        :note
+            Returns `None` if the routine fails to extract
+            a `pandas.Timestamp` from any entry of `element`.
+    """
+    result = None
+    try:
+        result = pd.to_datetime(element,
+                                infer_datetime_format=True,
+                                format='mixed').apply(lambda x: x.timestamp())
+    except ValueError:
+        pass
+
+    return result
 
 # ------------------------- #
 # Tags/Sequences
 # ------------------------- #
+
 
 # TODO Make it split on something other than commas
 def _tags_to_tuples(tags_str: str) -> Tuple[str]:
@@ -252,10 +269,12 @@ def _clean_quantity(element: pd.Series) -> pd.Series:
     """
     Given a quantity, clean and convert it into float numeric format. If element is NaN, or inf, then returns None.
     """
+
     def _no_symbols(elt):
         no_symbols = re.sub("[^0-9.,]", "", str(elt)).replace(",", ".")
         no_symbols = '0' if no_symbols == '' else no_symbols
         return float(no_symbols)
+
     element = element.apply(_no_symbols)
     return _clean_float(element)
 
@@ -302,6 +321,27 @@ def _rm_rows_w_empty_targets(df: pd.DataFrame, target: str) -> pd.DataFrame:
     return df
 
 
+def _timeseries_edge_case_detection(data: pd.DataFrame, timeseries_settings: Dict):
+    """
+    Detect timeseries edge cases and raise assertion errors:
+
+    1) if window size is greater than dataset length
+
+    :param data: The raw data
+    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be
+    the default object
+
+    :returns: None
+
+    """
+
+    if timeseries_settings.get('window', None) is not None:
+        window = timeseries_settings.get('window', 0)
+        assert len(data) >= window, "Window size is greater than input data length: increase input data length."
+
+    return
+
+
 def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: str,
                     mode: str, timeseries_settings: Dict, anomaly_detection: bool,
                     dtype_dict: Dict[str, dtype]) -> pd.DataFrame:
@@ -313,11 +353,13 @@ def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: 
     :param identifiers: A dict containing all identifier typed columns
     :param target: The target columns
     :param mode: Can be "predict" or "train"
-    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be the default object
+    :param timeseries_settings: Timeseries related settings, only relevant for timeseries predictors, otherwise can be 
+    the default object
     :param anomaly_detection: Are we detecting anomalies with this predictor?
 
     :returns: A (new) dataframe without the dropped columns
-    """ # noqa
+    """  # noqa
+
     data = deepcopy(data)
     to_drop = [*[x for x in identifiers.keys() if x != target],
                *[x for x in data.columns if x in dtype_dict and dtype_dict[x] == dtype.invalid]]
@@ -336,10 +378,10 @@ def _remove_columns(data: pd.DataFrame, identifiers: Dict[str, object], target: 
         data = _rm_rows_w_empty_targets(data, target)
     if mode == "predict":
         if (
-            target in data.columns
-            and (not timeseries_settings.get('is_timeseries', False) or
-                 not timeseries_settings.get('use_previous_target', False))
-            and not anomaly_detection
+                target in data.columns
+                and (not timeseries_settings.get('is_timeseries', False) or
+                     not timeseries_settings.get('use_previous_target', False))
+                and not anomaly_detection
         ):
             data = data.drop(columns=[target])
 
@@ -358,7 +400,7 @@ def _get_columns_to_clean(data: pd.DataFrame, dtype_dict: Dict[str, dtype], mode
     :param mode: Can be "predict" or "train"
 
     :returns: A list of columns that we want to clean
-    """ # noqa
+    """  # noqa
 
     cleanable_columns = []
     for name, _ in dtype_dict.items():
@@ -370,16 +412,110 @@ def _get_columns_to_clean(data: pd.DataFrame, dtype_dict: Dict[str, dtype], mode
     return cleanable_columns
 
 
-def clean_timeseries(df: pd.DataFrame, tss: Dict) -> pd.DataFrame:
-    """
-    All timeseries-specific cleaning logic goes here. Currently:
+def _fix_duplicates(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
+    """ Removes duplicate timestamps from DataFrame.
 
-    1) Any row with `nan`-valued order-by measurements is dropped.
+        :param df: DataFrame with input data.
+        :param order_by: name of column to order DataFrame
+                         i.e. the timestamp column.
 
-    :param df: data.
-    :param tss: timeseries settings
-    :return: cleaned data.
+        Groups of duplicates with numerical data are averaged
+        to form a single entry, while for groups of duplicates
+        with non-numerical data the duplicates are discarded and
+        only the first occurence is kept.
     """
+    # build mask with duplicated timestamps
+    df = df.reset_index(drop=True)
+    dup_ts_mask = df[tss['order_by']].duplicated(keep='first')
+    # return if no duplicated indices are found
+    if dup_ts_mask.sum() == 0:
+        return df
+
+    # build groups of duplicated indices
+    dup_idx_groups = []
+    curr_group = []
+    for j, dup_idx in enumerate(df.index[:-1]):
+        # check if current and next items are duplicated
+        is_curr_dup = dup_ts_mask.values[j]
+        is_next_dup = dup_ts_mask.values[j + 1]
+        # current and next item are not duplicates
+        if (not is_curr_dup) and (not is_next_dup):
+            continue
+        # next item is marked as duplicated
+        # -> creates a new group and adds item
+        if not is_curr_dup and is_next_dup:
+            curr_group = []
+            curr_group.append(dup_idx)
+        # current and next item are marked as duplicated
+        # -> adds and item
+        if is_curr_dup and is_next_dup:
+            curr_group.append(dup_idx)
+        # current item is marked as duplicated and next
+        # item is not, or reached end of data
+        # -> add item and close group
+        if (is_curr_dup and (not is_next_dup)) or (j == len(df) - 1):
+            curr_group.append(dup_idx)
+            g = np.asarray(curr_group)
+            dup_idx_groups.append(g)
+    # average numerical columns in groups
+    # keep the first value for non-numerical columns
+    avg_groups = []
+    for grp in dup_idx_groups:
+        avg_num_row = df.loc[grp].mean(axis=0, numeric_only=True)
+        num_data_float = pd.DataFrame(avg_num_row).transpose()
+        row = None
+        # respect original types
+        num_data = pd.DataFrame()
+        num_cols = list(num_data_float.columns)
+        for nc in num_cols:
+            col_dtype = df.dtypes[nc]
+            num_data[nc] = num_data_float[nc].values.astype(col_dtype)
+        num_data = num_data.reset_index(drop=True)
+        # handle case where all columns are numeric
+        if num_data.shape[1] == len(df.columns):
+            row = num_data
+        else:
+            non_num_row = df.loc[grp].iloc[0].drop(num_cols)
+            non_num_data = pd.DataFrame(non_num_row).transpose()
+            non_num_data = non_num_data.reset_index(drop=True)
+            row = num_data.join(non_num_data, how='right')
+        avg_groups.append(row)
+    dedup = pd.concat(avg_groups + [df.loc[~dup_ts_mask], ], axis=0)
+    mask = ~dedup[tss['order_by']].duplicated(keep='first')
+    dedup = dedup.loc[mask]
+    dedup = dedup.sort_values(by=tss['order_by'])
+
+    return dedup
+
+
+def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
+    """
+        All timeseries-specific cleaning logic goes here. Currently:
+            1) Any row with `nan`-valued order-by measurements is dropped.
+            2) Rows with duplicated time-stamps are trated the following way:
+               - columns that are numerical are averaged
+               - for non-numerical columns, only the first duplicate is kept.
+
+        :param df: data.
+        :param tss: timeseries settings
+        :return: cleaned data.
+    """
+    # locate and drop rows with invalid (None, Nan, NaT) timestamps
     invalid_rows = df[df[tss['order_by']].isna()].index
     df = df.drop(invalid_rows)
+
+    # save original order of columns
+    orig_cols = deepcopy(df.columns.to_list())
+    # fix duplicates by group
+    if tss.get('group_by', False):
+        correct_dfs = []
+        grps = df.groupby(by=tss['group_by'])
+        for _, g in grps:
+            correct_dfs += [_fix_duplicates(g, tss)]
+        df = pd.concat(correct_dfs)
+    else:
+        df = _fix_duplicates(df, tss)
+    df = df.reset_index(drop=True)
+    df = df.reindex(orig_cols, axis=1)
+
     return df
