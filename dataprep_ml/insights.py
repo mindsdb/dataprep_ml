@@ -8,7 +8,7 @@ from scipy.stats import entropy
 from dateutil.parser import parse as parse_dt
 
 from type_infer.dtype import dtype
-from type_infer.infer import infer_types
+from type_infer.api import infer_types
 
 from dataprep_ml.cleaners import cleaner
 from dataprep_ml.cleaners import _clean_float
@@ -35,7 +35,7 @@ def analyze_dataset(df: pd.DataFrame, target: Optional[str] = None, args: Option
     else:
         args['target'] = target
 
-    type_information = infer_types(df, args.get('pct_invalid', 2))
+    type_information = infer_types(df)
     stats = statistical_analysis(df, type_information.dtypes, args, type_information.identifiers)
     return DataAnalysis(type_information=type_information, statistical_analysis=stats)
 

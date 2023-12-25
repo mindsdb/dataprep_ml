@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from type_infer.infer import infer_types
+from type_infer.api import infer_types
 
 from dataprep_ml.cleaners import cleaner
 from dataprep_ml.imputers import NumericalImputer, CategoricalImputer
@@ -12,7 +12,7 @@ class TestCleaners(unittest.TestCase):
 
     def test_0_airline_sentiment(self):
         df = pd.read_csv("tests/data/airline_sentiment_sample.csv")
-        inferred_types = infer_types(df, pct_invalid=0)
+        inferred_types = infer_types(df, config={'pct_invalid': 0})
         target = 'airline_sentiment'
         tss = {
             'is_timeseries': False,
@@ -32,7 +32,7 @@ class TestCleaners(unittest.TestCase):
 
     def test_1_hdi(self):
         df = pd.read_csv("tests/data/hdi.csv")
-        inferred_types = infer_types(df, pct_invalid=0)
+        inferred_types = infer_types(df, config={'pct_invalid': 0})
         target = 'Development Index'
         tss = {
             'is_timeseries': False,
@@ -54,7 +54,7 @@ class TestCleaners(unittest.TestCase):
         df = df.rename(columns={'GDP ($ per capita)': 'GDP', 'Area (sq. mi.)': 'Area', 'Literacy (%)': 'Literacy'})
         df['Infant mortality '] = df['Infant mortality '].apply(lambda x: 'High' if x >= 20 else 'Low')
 
-        inferred_types = infer_types(df, pct_invalid=0)
+        inferred_types = infer_types(df, config={'pct_invalid': 0})
         target = 'Development Index'
         tss = {
             'is_timeseries': False,
@@ -164,7 +164,7 @@ class TestCleaners(unittest.TestCase):
         })
 
         # inferred types are the same for both DataFrames
-        inferred_types = infer_types(df_correct, pct_invalid=0)
+        inferred_types = infer_types(df_correct, config={'pct_invalid': 0})
         target = 'z'
         tss = {
             'is_timeseries': True,
@@ -208,7 +208,7 @@ class TestCleaners(unittest.TestCase):
             'order_by': 'T',
             'group_by': 'Country'
         }
-        inferred_types = infer_types(data, pct_invalid=0)
+        inferred_types = infer_types(data, config={'pct_invalid': 0})
         transformed = cleaner(data=data,
                               dtype_dict=inferred_types.dtypes,
                               pct_invalid=0.1,
