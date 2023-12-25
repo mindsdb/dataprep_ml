@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 
-from type_infer.infer import infer_types
+from type_infer.api import infer_types
 
 from dataprep_ml.splitters import splitter
 
@@ -9,7 +9,7 @@ from dataprep_ml.splitters import splitter
 class TestSplitters(unittest.TestCase):
     def test_0_hdi(self):
         df = pd.read_csv("tests/data/hdi.csv")
-        inferred_types = infer_types(df, pct_invalid=0)
+        inferred_types = infer_types(df, config={'pct_invalid': 0})
         target = 'Development Index'
 
         train_pct, dev_pct, test_pct = 0.8, 0.1, 0.1
