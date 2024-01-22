@@ -7,3 +7,7 @@ Data utilities for Machine Learning pipelines.
 1. Data cleaning
 2. Data analysis
 3. Data splitting
+
+## Use in distributed environments.
+
+Execute with `torchrun`.
