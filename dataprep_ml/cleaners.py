@@ -507,6 +507,10 @@ def clean_timeseries(df: pd.DataFrame, tss: dict) -> pd.DataFrame:
 
     # save original order of columns
     orig_cols = deepcopy(df.columns.to_list())
+
+    # cast order_by as numerical
+    df[tss['order_by']] = pd.to_numeric(df[tss['order_by']], errors='raise')
+
     # fix duplicates by group
     if tss.get('group_by', False):
         correct_dfs = []
