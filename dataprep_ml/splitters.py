@@ -58,11 +58,14 @@ def splitter(
         train, dev, test = simple_split(data, pct_train, pct_dev, pct_test)
 
     # Final assertions for time series
-    if min(len(train), len(dev)) < tss.get('window', 1):
-        raise Exception(f"Dataset size is too small for the specified window size ({tss.get('window', 1)})")
+    window = tss.get('window', 1) if tss.get('window', 1) else 1
+    horizon = tss.get('horizon', 1) if tss.get('horizon', 1) else 1
 
-    if min(len(train), len(dev), len(test)) < tss.get('horizon', 1):
-        raise Exception(f"Dataset size is too small for the specified horizon size ({tss.get('horizon', 1)})")
+    if min(len(train), len(dev)) < window:
+        raise Exception(f"Dataset size is too small for the specified window size ({window})")
+
+    if min(len(train), len(dev), len(test)) < horizon:
+        raise Exception(f"Dataset size is too small for the specified horizon size ({horizon})")
 
     return {"train": train, "test": test, "dev": dev, "stratified_on": stratify_on}
 
