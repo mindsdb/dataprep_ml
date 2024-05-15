@@ -58,14 +58,25 @@ def splitter(
         train, dev, test = simple_split(data, pct_train, pct_dev, pct_test)
 
     # Final assertions for time series
-    window = tss.get('window', 1) if tss.get('window', 1) else 1
-    horizon = tss.get('horizon', 1) if tss.get('horizon', 1) else 1
+    if tss.get('is_timeseries', False) not in (None, False):
+        window = tss.get('window', 1) if tss.get('window', 1) else 1
+        horizon = tss.get('horizon', 1) if tss.get('horizon', 1) else 1
 
-    if min(len(train), len(dev)) < window:
-        raise Exception(f"Dataset size is too small for the specified window size ({window})")
+        if all([pct_train, pct_dev, pct_test]) > 0.0:
+            check_partitions = [train, dev, test]
+        elif all([pct_train, pct_test]) > 0.0:
+            check_partitions = [train, test]
+        elif all([pct_train, pct_dev]) > 0.0:
+            check_partitions = [train, dev]
+        else:
+            check_partitions = [train]
+        partition_lengths = [len(partition) for partition in check_partitions]
 
-    if min(len(train), len(dev), len(test)) < horizon:
-        raise Exception(f"Dataset size is too small for the specified horizon size ({horizon})")
+        if min(partition_lengths) < window:
+            raise Exception(f"Dataset too small for the specified window size ({window}). Partition length: {partition_lengths}")  # noqa
+
+        if min(partition_lengths) < horizon:
+            raise Exception(f"Dataset too small for the specified horizon size ({horizon}). Partition length: {partition_lengths}")  # noqa
 
     return {"train": train, "test": test, "dev": dev, "stratified_on": stratify_on}
 
