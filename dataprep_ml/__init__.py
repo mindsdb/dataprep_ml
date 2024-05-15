@@ -1,6 +1,6 @@
 from dataprep_ml.base import StatisticalAnalysis, DataAnalysis
 
-__version__ = '24.5.1.1'
+__version__ = '24.5.1.2'
 __name__ = "dataprep_ml"
 
 
