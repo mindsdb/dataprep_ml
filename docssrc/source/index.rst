@@ -110,7 +110,7 @@ Join our mission of democratizing machine learning and allowing developers to be
 
 Contributor Code of Conduct
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Please note that this project is released with a `Contributor Code of Conduct <https://github.com/mindsdb/lightwood/blob/stable/CODE_OF_CONDUCT.md>`_. By participating in this project, you agree to abide by its terms.
+Please note that this project is released with a `Contributor Code of Conduct <https://github.com/mindsdb/lightwood/blob/main/CODE_OF_CONDUCT.md>`_. By participating in this project, you agree to abide by its terms.
 
 
 License
