@@ -19,7 +19,7 @@ dataclasses-json = "^0.6.3"
 colorlog = "^6.5.0"
 pydantic = "*"
 
-[tool.poetry.dev-dependencies]
+[poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 
 [build-system]
